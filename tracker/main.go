@@ -82,8 +82,9 @@ func getNodes() {
 		} else {
 			log.Error().Interface("err", err).Fields(n.GetLabels()).Msg("Failed to find label - topology.kubernetes.io/zone")
 		}
-
 	}
+	log.Info().Interface("node_ips", nodeIps).Send()
+	log.Info().Interface("node_zones", nodeZones).Send()
 
 }
 
