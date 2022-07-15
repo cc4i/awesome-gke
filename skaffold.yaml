@@ -19,7 +19,7 @@ deploy:
     defaultNamespace: run-tracker
     manifests:
     - manifests/ns-rev.yaml
-    # - manifests/service-account.yaml
+    - manifests/service-account.yaml
     - manifests/deploy-svc-1.yaml
     - manifests/svc-1.yaml
     - manifests/deploy-svc-2.yaml
@@ -28,3 +28,4 @@ deploy:
     - manifests/svc-3.yaml
     - manifests/deploy-svc-4.yaml
     - manifests/svc-4.yaml
+  statusCheck: false

@@ -42,4 +42,4 @@ spec:
           limits:
             cpu: 500m
             memory: 128Mi
-      # serviceAccountName: tracker-sa
+      serviceAccountName: tracker-sa

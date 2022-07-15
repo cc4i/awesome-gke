@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
@@ -67,7 +68,11 @@ func getNodes() {
 
 	nodes, err := clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		log.Fatal().Interface("err", err).Msg("clientset.CoreV1.Nodes.List")
+		time.Sleep(500 * time.Millisecond)
+		nodes, err = clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+		if err != nil {
+			log.Fatal().Interface("err", err).Msg("clientset.CoreV1.Nodes.List")
+		}
 	}
 	for _, n := range nodes.Items {
 		name := n.GetName()
