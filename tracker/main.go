@@ -12,7 +12,6 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -58,38 +57,34 @@ func getNodes() {
 	// creates the in-cluster config
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		panic(err.Error())
+		log.Fatal().Interface("err", err).Msg("rest.InClusterConfig")
 	}
 	// creates the clientset
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		panic(err.Error())
+		log.Fatal().Interface("err", err).Msg("kubernetes.NewForConfig")
 	}
-	// for {
-	// get pods in all the namespaces by omitting namespace
-	// Or specify namespace to get pods in particular namespace
-	pods, err := clientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
+
+	nodes, err := clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		panic(err.Error())
+		log.Fatal().Interface("err", err).Msg("clientset.CoreV1.Nodes.List")
 	}
-	log.Info("There are %d pods in the cluster\n", len(pods.Items))
+	for _, n := range nodes.Items {
+		name := n.GetName()
+		for _, addr := range n.Status.Addresses {
+			if addr.Type == "InternalIP" {
+				nodeIps[name] = addr.Address
+				break
+			}
+		}
+		if zone, ok := n.GetLabels()["topology.kubernetes.io/zone"]; ok {
+			nodeZones[name] = zone
+		} else {
+			log.Error().Interface("err", err).Fields(n.GetLabels()).Msg("Failed to find label - topology.kubernetes.io/zone")
+		}
 
-	// Examples for error handling:
-	// - Use helper functions e.g. errors.IsNotFound()
-	// - And/or cast to StatusError and use its properties like e.g. ErrStatus.Message
-	_, err = clientset.CoreV1().Pods("default").Get(context.TODO(), "example-xxxxx", metav1.GetOptions{})
-	if errors.IsNotFound(err) {
-		log.Error().Msg("Pod example-xxxxx not found in default namespace")
-	} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
-		log.Error().Interface("err", statusError).Msg(statusError.ErrStatus.Message)
-	} else if err != nil {
-		panic(err.Error())
-	} else {
-		log.Error().Msg("Found example-xxxxx pod in default namespace\n")
 	}
 
-	// time.Sleep(10 * time.Second)
-	// }
 }
 
 // Get Zone by Node name
