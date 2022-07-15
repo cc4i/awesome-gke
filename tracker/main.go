@@ -11,8 +11,20 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
+// Node Name -> Node IP
+var nodeIps map[string]string
+
+// Node Name -> Zone
+var nodeZones map[string]string
+
+// Invoking chain with reverse order
 type TripDetail []P2p
 
 type P2p struct {
@@ -33,8 +45,64 @@ type Point struct {
 type Pod struct {
 	Namespace string `json:"namespace"`
 	Name      string `json:"name"`
+	NodeName  string `json:"node_name"`
+	NodeIp    string `json:"node_ip"`
+	Zone      string `json:"zone"`
 }
 
+// Get Nodes information from Kubernetes API
+func getNodes() {
+	nodeIps = make(map[string]string)
+	nodeZones = make(map[string]string)
+
+	// creates the in-cluster config
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		panic(err.Error())
+	}
+	// creates the clientset
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		panic(err.Error())
+	}
+	// for {
+	// get pods in all the namespaces by omitting namespace
+	// Or specify namespace to get pods in particular namespace
+	pods, err := clientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		panic(err.Error())
+	}
+	log.Info("There are %d pods in the cluster\n", len(pods.Items))
+
+	// Examples for error handling:
+	// - Use helper functions e.g. errors.IsNotFound()
+	// - And/or cast to StatusError and use its properties like e.g. ErrStatus.Message
+	_, err = clientset.CoreV1().Pods("default").Get(context.TODO(), "example-xxxxx", metav1.GetOptions{})
+	if errors.IsNotFound(err) {
+		log.Error().Msg("Pod example-xxxxx not found in default namespace")
+	} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
+		log.Error().Interface("err", statusError).Msg(statusError.ErrStatus.Message)
+	} else if err != nil {
+		panic(err.Error())
+	} else {
+		log.Error().Msg("Found example-xxxxx pod in default namespace\n")
+	}
+
+	// time.Sleep(10 * time.Second)
+	// }
+}
+
+// Get Zone by Node name
+func getZone(name string) string {
+	return nodeZones[name]
+}
+
+// Get node IP by Node name
+func getNodeIP(name string) string {
+	return nodeIps[name]
+}
+
+// Get local/Pod IP
 func getLocalIP() string {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
@@ -51,14 +119,22 @@ func getLocalIP() string {
 	return ""
 }
 
+// Get Pod name from env variable
 func getPodName() string {
 	return os.Getenv("POD_NAME")
 }
 
+// Get the namepspace where the Pod was in
 func getPodNamespace() string {
 	return os.Getenv("POD_NAMESPACE")
 }
 
+// Get the Node name from env variable
+func getNodeName() string {
+	return os.Getenv("POD_NODE_NAME")
+}
+
+// Get the URL for next call from env variable
 func getNextCall() string {
 	return os.Getenv("NEXT_CALL")
 }
@@ -67,6 +143,7 @@ func buildResponse() string {
 	return "StatusOK from " + getLocalIP()
 }
 
+// Call /trip API and return TripDetail
 func callTrip(url string) TripDetail {
 	log.Info().Str("next_call", url).Send()
 	if url != "null" && url != "" {
@@ -78,6 +155,7 @@ func callTrip(url string) TripDetail {
 		}
 		req.Header.Add("x-pod-name", getPodName())
 		req.Header.Add("x-pod-namespace", getPodNamespace())
+		req.Header.Add("x-pod-ip", getLocalIP())
 		res, err := client.Do(req)
 		if err != nil {
 			log.Error().Interface("err", err).Msg("client.Do")
@@ -93,6 +171,7 @@ func callTrip(url string) TripDetail {
 	return nil
 }
 
+// /trip API
 func trip(c *gin.Context) {
 	var td TripDetail
 	whoami := c.Param("whoami")
@@ -105,10 +184,13 @@ func trip(c *gin.Context) {
 	myself := &Pod{
 		Name:      getPodName(),
 		Namespace: getPodNamespace(),
+		NodeName:  getNodeName(),
+		NodeIp:    getNodeIP(getNodeName()),
+		Zone:      getZone(getNodeName()),
 	}
 
 	src := Point{
-		Ip: c.ClientIP(),
+		Ip: c.Request.Header.Get("x-pod-ip"),
 	}
 
 	if whoami == "pod" {
@@ -147,6 +229,9 @@ func main() {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
 	log.Info().Str("local_ip", getLocalIP()).Str("status", "ready").Msg("Tracker service")
+
+	//Retrieve Nodes inforamtion
+	getNodes()
 
 	gin.DisableConsoleColor()
 	server := gin.Default()

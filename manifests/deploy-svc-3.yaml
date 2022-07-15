@@ -28,6 +28,10 @@ spec:
             valueFrom: 
               fieldRef:
                 fieldPath: metadata.name
+          - name: POD_NODE_NAME
+            valueFrom: 
+              fieldRef:
+                fieldPath: spec.nodeName
           - name: NEXT_CALL
             value: http://svc-4:8000/trip/pod
         ports:

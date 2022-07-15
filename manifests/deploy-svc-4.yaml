@@ -28,6 +28,10 @@ spec:
             valueFrom: 
               fieldRef:
                 fieldPath: metadata.name
+          - name: POD_NODE_NAME
+            valueFrom: 
+              fieldRef:
+                fieldPath: spec.nodeName
         ports:
           - name: http
             containerPort: 8000
