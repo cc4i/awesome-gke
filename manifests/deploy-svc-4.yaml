@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment 
+metadata:
+  name: tracker-svc-4
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: tracker
+      svc: svc-4
+  template:
+    metadata:
+      labels: 
+        app: tracker
+        svc: svc-4
+    spec:
+      terminationGracePeriodSeconds: 20
+      containers:
+      - name: tracker
+        image:  tracker
+        imagePullPolicy: "Always"
+        env:
+          - name: POD_NAME
+            valueFrom: 
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_NAMESPACE
+            valueFrom: 
+              fieldRef:
+                fieldPath: metadata.name
+        ports:
+          - name: http
+            containerPort: 8000
+        resources:
+          requests: 
+            cpu: 500m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 128Mi
