@@ -17,7 +17,7 @@ spec:
       terminationGracePeriodSeconds: 20
       containers:
       - name: tracker
-        image:  tracker
+        image:  us-central1-docker.pkg.dev/play-with-anthos-340801/jigaree/tracker
         imagePullPolicy: "Always"
         env:
           - name: POD_NAME
@@ -29,13 +29,13 @@ spec:
               fieldRef:
                 fieldPath: metadata.name
           - name: NEXT_CALL
-            value: http://svc-4:8000
+            value: http://svc-4:8000/trip/pod
         ports:
           - name: http
             containerPort: 8000
         resources:
           requests: 
-            cpu: 500m
+            cpu: 200m
             memory: 128Mi
           limits:
             cpu: 500m

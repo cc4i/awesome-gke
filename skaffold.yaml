@@ -18,7 +18,7 @@ deploy:
   kubectl:
     defaultNamespace: run-tracker
     manifests:
-    - manifests/ns.yaml
+    - manifests/ns-rev.yaml
     - manifests/deploy-svc-1.yaml
     - manifests/svc-1.yaml
     - manifests/deploy-svc-2.yaml

@@ -63,3 +63,4 @@ app.*.map.json
 **/build/*
 
 /cc-testing/
+/manifests/ns-rev.yaml
