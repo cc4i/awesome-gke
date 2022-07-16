@@ -95,11 +95,21 @@ func getNodes() {
 
 // Get Zone by Node name
 func getZone(name string) string {
+	if z, ok := nodeZones[name]; ok {
+		return z
+	} else {
+		getNodes()
+	}
 	return nodeZones[name]
 }
 
 // Get node IP by Node name
 func getNodeIP(name string) string {
+	if ip, ok := nodeIps[name]; ok {
+		return ip
+	} else {
+		getNodes()
+	}
 	return nodeIps[name]
 }
 
@@ -146,7 +156,7 @@ func buildResponse() string {
 
 // Call /trip API and return TripDetail
 func callTrip(url string) TripDetail {
-	log.Info().Str("next_call", url).Send()
+	log.Info().Str("url", url).Send()
 	if url != "null" && url != "" {
 		client := http.Client{}
 		req, err := http.NewRequest("GET", url, nil)
@@ -157,11 +167,15 @@ func callTrip(url string) TripDetail {
 		req.Header.Add("x-pod-name", getPodName())
 		req.Header.Add("x-pod-namespace", getPodNamespace())
 		req.Header.Add("x-pod-ip", getLocalIP())
+		req.Header.Add("x-node-name", getNodeName())
+		req.Header.Add("x-node-ip", getNodeIP(getNodeName()))
+		req.Header.Add("x-zone", getZone(getNodeName()))
 		res, err := client.Do(req)
 		if err != nil {
 			log.Error().Interface("err", err).Msg("client.Do")
 			return nil
 		}
+		log.Info().Str("http_code", res.Status).Msg("return code from " + url)
 		buf, _ := ioutil.ReadAll(res.Body)
 		var ttd TripDetail
 		json.Unmarshal(buf, &ttd)
@@ -182,30 +196,37 @@ func trip(c *gin.Context) {
 		td = append(td, ttd...)
 	}
 
-	myself := &Pod{
-		Name:      getPodName(),
-		Namespace: getPodNamespace(),
-		NodeName:  getNodeName(),
-		NodeIp:    getNodeIP(getNodeName()),
-		Zone:      getZone(getNodeName()),
+	// Get remote client IP if it's first call
+	cltIp := c.Request.Header.Get("x-pod-ip")
+	if cltIp == "" {
+		cltIp = c.ClientIP()
 	}
-
 	src := Point{
-		Ip: c.Request.Header.Get("x-pod-ip"),
+		Ip: cltIp,
 	}
 
+	// Build source pod from headers
 	if whoami == "pod" {
 		src.Pod = &Pod{
 			Name:      c.Request.Header.Get("x-pod-name"),
 			Namespace: c.Request.Header.Get("x-pod-namespace"),
+			NodeName:  c.Request.Header.Get("x-node-name"),
+			NodeIp:    c.Request.Header.Get("x-node-ip"),
+			Zone:      c.Request.Header.Get("x-zone"),
 		}
 	}
 	p2p := P2p{
 		Number: len(td) + 1,
 		Source: src,
 		Destination: Point{
-			Ip:  getLocalIP(),
-			Pod: myself,
+			Ip: getLocalIP(),
+			Pod: &Pod{
+				Name:      getPodName(),
+				Namespace: getPodNamespace(),
+				NodeName:  getNodeName(),
+				NodeIp:    getNodeIP(getNodeName()),
+				Zone:      getZone(getNodeName()),
+			},
 		},
 		Method:     c.Request.Method,
 		RequestURI: c.Request.RequestURI,
@@ -230,9 +251,6 @@ func main() {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
 	log.Info().Str("local_ip", getLocalIP()).Str("status", "ready").Msg("Tracker service")
-
-	//Retrieve Nodes inforamtion
-	getNodes()
 
 	gin.DisableConsoleColor()
 	server := gin.Default()

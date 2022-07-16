@@ -28,4 +28,5 @@ deploy:
     - manifests/svc-3.yaml
     - manifests/deploy-svc-4.yaml
     - manifests/svc-4.yaml
+    
   statusCheck: false
