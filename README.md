@@ -22,6 +22,8 @@ Create a place to help people better leveraging GKE & Anthos products in actions
 > Deploy pods across the nodes in different zones to supports highly available and scalable, as well as leverage weight distrubution of Istio to reduce inter-zone traffic & cost.
 
 
-### 4.3  Multi-Cluster Ingress (MCI) + Anthos Service Mesh (ASM) + Locality Setting
+### 4.3 [GLB + Anthos Service Mesh (ASM) + Locality Setting](./docs/glb-locality.md)
 
-> Using MCI and ASM to implement multi-cluster traffic managment across different Cloud Providers. In each individual k8s cluster we leverage weight distrubution of Istio to reduce inter-zone traffic & cost.
+> Using GLB and ASM to implement multi-cluster traffic managment across different Cloud Providers. In each individual k8s cluster we leverage weight distrubution of Istio to reduce inter-zone traffic & cost.
+
+### 4.4 Multi-cluster mesh outside Google Cloud

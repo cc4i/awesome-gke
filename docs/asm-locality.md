@@ -2,6 +2,8 @@
 
 > Deploy pods across the nodes in different zones to supports highly available and scalable, as well as leverage weight distrubution of Istio to reduce inter-zone traffic & cost.
 
+### Instruction
+
 ```sh
 # Clone repo
 git clone https://github.com/cc4i/multi-k8s.git
