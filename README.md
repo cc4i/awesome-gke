@@ -4,6 +4,7 @@ Create a place to help people better leveraging GKE & Anthos products in actions
 
 ## 1. Infrastructure
 ### 1.1. Place Pods into nodes in same zone with high availability
+> The cluster has multiple node pools for cross different zones, one zone for primary and one for standby. Using Affinity/Anti-affinity to place Pods into nodes in primary zone and shift to standby zone when there's zonal failure.
 <br>
 
 ## 2. Autoscaling 
@@ -27,3 +28,4 @@ Create a place to help people better leveraging GKE & Anthos products in actions
 > Using GLB and ASM to implement multi-cluster traffic managment across different Cloud Providers. In each individual k8s cluster we leverage weight distrubution of Istio to reduce inter-zone traffic & cost.
 
 ### 4.4 Multi-cluster mesh outside Google Cloud
+> https://cloud.google.com/service-mesh/docs/unified-install/off-gcp-multi-cluster-setup
