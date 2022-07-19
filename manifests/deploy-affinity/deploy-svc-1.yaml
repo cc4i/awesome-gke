@@ -61,11 +61,11 @@ spec:
                 - key: topology.kubernetes.io/zone
                   operator: In
                   values:
-                  - us-west4-a
+                  - asia-southeast1-a
             - weight: 10
               preference:
                 matchExpressions:
                 - key: topology.kubernetes.io/zone
                   operator: In
                   values:
-                  - us-west4-b
+                  - asia-southeast1-b
