@@ -241,13 +241,13 @@
             tc = data[i]
             src = {
               "key": tc.source.ip,
-              "text": tc.source.pod!=undefined? tc.source.ip + "\n" + tc.source.pod.zone:"client: " + tc.source.ip,
+              "text": tc.source.pod!=undefined? tc.source.pod.name + "\n" + tc.source.ip +"\n" + tc.source.pod.zone:"client: " + tc.source.ip,
               "color": tc.source.pod!=undefined? "#33B8FF":"#18B84D"
             }
             
             dst = {
               "key": tc.destination.ip,
-              "text": tc.destination.ip + "\n" + tc.destination.pod.zone,
+              "text": tc.destination.pod.name + "\n" + tc.destination.ip +"\n" + tc.destination.pod.zone,
               "color": "#33B8FF"
             }
             
