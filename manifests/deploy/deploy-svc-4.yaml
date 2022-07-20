@@ -42,4 +42,13 @@ spec:
           limits:
             cpu: 500m
             memory: 128Mi
+        readinessProbe:
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 1
+          httpGet:
+            path: /tracker-ui/
+            port: 8000
       serviceAccountName: tracker-sa

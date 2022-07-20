@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -238,8 +239,18 @@ func trip(c *gin.Context) {
 }
 
 func router(ctx context.Context, r *gin.Engine) *gin.Engine {
+	log.Info().Interface("ctx", ctx).Msg("context.Context pairs")
 	r.GET("/trip", trip)
 	r.GET("/trip/:whoami", trip)
+
+	// ko add static assets under ./kodata - https://github.com/google/ko#static-assets
+	if staticDir := os.Getenv("KO_DATA_PATH"); staticDir != "" {
+		log.Info().Str("KO_DATA_PATH", staticDir).Send()
+		r.Static("tracker-ui", staticDir)
+	} else {
+		r.Static("tracker-ui", "./kodata")
+	}
+
 	return r
 }
 
@@ -254,8 +265,14 @@ func main() {
 
 	gin.DisableConsoleColor()
 	server := gin.Default()
-	port := os.Getenv("POD_PORT")
-	if port != "" {
+
+	//setup CORS policies
+	config := cors.DefaultConfig()
+	config.AllowAllOrigins = true
+	config.AllowCredentials = true
+	server.Use(cors.Default())
+
+	if port := os.Getenv("POD_PORT"); port != "" {
 		log.Fatal().Err(router(context.Background(), server).Run("0.0.0.0:" + port))
 	} else {
 		log.Fatal().Err(router(context.Background(), server).Run("0.0.0.0:8000"))

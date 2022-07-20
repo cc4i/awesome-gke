@@ -210,33 +210,92 @@
     }
 
     function load() {
-      myDiagram.model = go.Model.fromJson(document.getElementById("mySavedModel").value);
+      model = { 
+            "class": "go.GraphLinksModel",
+            "nodeDataArray": [], //{"key":"Client1", "text":"192.168.1.1", "color":"#F3F01E"},
+            "linkDataArray": [] //{"from":"Client1", "to":"svc-1-7dfdc5fdff-lg7d2", "width":20},
+          }
+      myDiagram.model = go.Model.fromJson(model); //document.getElementById("mySavedModel").value
+
     }
+
+
+    function call_trip() {
+      const xhr = new XMLHttpRequest()
+      xhr.open("GET", document.getElementById("trackerUrl").value)
+      xhr.send()
+
+      xhr.onload = function() {
+        if (xhr.status === 200) {
+          //parse JSON datax`x
+          data = JSON.parse(xhr.responseText)
+          console.log(data)
+          document.getElementById("mySavedModel").value = JSON.stringify(data,  undefined, 4)
+
+          model = myDiagram.model
+          keys =[]
+          for (let i=0; i<model.nodeDataArray.length; i++) {
+            keys.push(model.nodeDataArray[i].key)
+          }
+          for (let i=0; i<data.length; i++) {
+            tc = data[i]
+            src = {
+              "key": tc.source.ip,
+              "text": tc.source.pod!=undefined? tc.source.ip + "\n" + tc.source.pod.zone:"client: " + tc.source.ip,
+              "color": tc.source.pod!=undefined? "#33B8FF":"#18B84D"
+            }
+            
+            dst = {
+              "key": tc.destination.ip,
+              "text": tc.destination.ip + "\n" + tc.destination.pod.zone,
+              "color": "#33B8FF"
+            }
+            
+
+            link = {
+              "from": tc.source.ip,
+              "to": tc.destination.ip,
+              "width":10
+            }
+            if (!keys.includes(src.key)) { 
+              model.nodeDataArray.push(src) 
+              keys.push(src.key)
+            }
+            if (!keys.includes(dst.key)) { 
+              model.nodeDataArray.push(dst)
+              keys.push(dst.key)
+            }
+            model.linkDataArray.push(link)
+          }
+          console.log(JSON.stringify(model,  undefined, 4))
+          myDiagram.model = go.Model.fromJson(model)
+            ///
+
+        } else if (xhr.status === 404) {
+          console.log("No records found")
+        }
+      }
+
+    }
+    
+
     window.addEventListener('DOMContentLoaded', init);
   </script>
 
 <div id="sample">
   <div id="myDiagramDiv" style="border: 1px solid black; width: 99%; height: 400px; position: relative; -webkit-tap-highlight-color: rgba(255, 255, 255, 0);"><canvas tabindex="0" width="2468" height="1696" style="position: absolute; top: 0px; left: 0px; z-index: 2; user-select: none; touch-action: none; width: 1234px; height: 848px;">This text is displayed if your browser does not support the Canvas HTML element.</canvas><div style="position: absolute; overflow: auto; width: 1234px; height: 848px; z-index: 1;"><div style="position: absolute; width: 1717.84px; height: 1px;"></div></div></div>
-  <p>
-    A Sankey diagram is a type of flow diagram where the Link thickness is proportional to the flow quantity.
-  </p>
+
   <div>
     <div>
-      <button onclick="load()">Read</button>
+      <p>
+        <button onclick="load()">Loading data for new diagram</button>
+        <button onclick="call_trip()">Send request to "/trip"</button> <input id="trackerUrl" type="text" value="http://34.143.247.18/trip" size="50%"/>
+      </p>
     </div>
-    <textarea id="mySavedModel" style="width:100%;height:250px">{ "class": "go.GraphLinksModel",
-  "nodeDataArray": [
-{"key":"Coal reserves", "text":"192.168.1.1", "color":"#9d75c2"},
-{"key":"Coal imports", "text":"Coal imports", "color":"#9d75c2"},
-{"key":"Coal imports2", "text":"Coal imports2", "color":"#9d75c2"},
-{"key":"Coal", "text":"tracker-svc-1-7dfdc5fdff-lg7d2 asia-southeast1-a", "color":"#9d75c2"}
-    ], "linkDataArray": [
-{"from":"Coal reserves", "to":"Coal", "width":31},
-{"from":"Coal imports", "to":"Coal", "width":86},
-{"from":"Coal imports2", "to":"Coal", "width":20}
- ]}
+    <!-- #33B8FF/bulue #18B84D/green  #F3F01E/yellow-->
+    <textarea id="mySavedModel" style="width:100%;height:250px">
     </textarea>
   </div>
- 
+
   </body>
   </html>

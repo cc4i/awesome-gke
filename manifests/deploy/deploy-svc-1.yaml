@@ -33,7 +33,7 @@ spec:
               fieldRef:
                 fieldPath: spec.nodeName
           - name: NEXT_CALL
-            value: http://svc-2:8000/trip/pod
+            value: http://svc-2.run-tracker.svc.cluster.local:8000/trip/pod
         ports:
           - name: http
             containerPort: 8000
@@ -44,4 +44,13 @@ spec:
           limits:
             cpu: 500m
             memory: 128Mi
+        readinessProbe:
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 1
+          httpGet:
+            path: /tracker-ui/
+            port: 8000
       serviceAccountName: tracker-sa
