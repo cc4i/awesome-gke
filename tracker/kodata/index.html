@@ -220,6 +220,86 @@
     }
 
 
+    function call_initial() {
+      const xhr = new XMLHttpRequest()
+      xhr.open("POST", document.getElementById("initialUrl").value)
+      xhr.setRequestHeader("Content-Type", "text/plain")
+      xhr.onreadystatechange = function() {
+        if (this.readyState === XMLHttpRequest.DONE && this.status === 200) {
+
+          data = JSON.parse(xhr.responseText)
+          console.log(data)
+          document.getElementById("mySavedModel").value = JSON.stringify(data,  undefined, 4)
+
+          model = myDiagram.model
+          keys =[]
+          for (let i=0; i<model.nodeDataArray.length; i++) {
+            keys.push(model.nodeDataArray[i].key)
+          }
+          for (let i=0; i<data.length; i++) {
+            tc = data[i]
+            if (tc.source.pod==undefined) {
+              srcColor="#18B84D" //green
+            } else {
+              if (tc.source.pod.zone.endsWith("-b")) {
+                srcColor="#33B8FF" //blue
+              } else if (tc.source.pod.zone.endsWith("-a")) {
+                srcColor="#AC1EF3" //purple
+              } else {
+                srcColor="#F3F01E" //yellow
+              }
+            }
+            src = {
+              "key": tc.source.ip,
+              "text": tc.source.pod!=undefined? tc.source.pod.name + "\n" + tc.source.ip +"\n" + tc.source.pod.zone:"client: " + tc.source.ip,
+              "color": srcColor
+            }
+            
+            if (tc.destination.pod.zone.endsWith("-b")) {
+              dstColor="#33B8FF" //blue
+            } else if (tc.destination.pod.zone.endsWith("-a")) {
+              dstColor="#AC1EF3" //purple
+            } else {
+              dstColor="#F3F01E" //yellow
+              
+            }
+            dst = {
+              "key": tc.destination.ip,
+              "text": tc.destination.pod.name + "\n" + tc.destination.ip +"\n" + tc.destination.pod.zone,
+              "color": dstColor
+            }
+            
+            link = {
+              "from": tc.source.ip,
+              "to": tc.destination.ip,
+              "width":1
+            }
+            if (!keys.includes(src.key)) { 
+              model.nodeDataArray.push(src) 
+              keys.push(src.key)
+            }
+            if (!keys.includes(dst.key)) { 
+              model.nodeDataArray.push(dst)
+              keys.push(dst.key)
+            }
+            model.linkDataArray.push(link)
+          }
+          console.log( model.linkDataArray)
+          myDiagram.model = go.Model.fromJson(model)
+            ///
+
+        } else if (xhr.status === 404) {
+          console.log("No records found")
+        }
+
+      }
+      xhr.send(document.getElementById("initialModel").value)
+
+
+    }
+
+
+
     function call_trip() {
       const xhr = new XMLHttpRequest()
       xhr.open("GET", document.getElementById("trackerUrl").value)
@@ -239,18 +319,36 @@
           }
           for (let i=0; i<data.length; i++) {
             tc = data[i]
+            if (tc.source.pod==undefined) {
+              srcColor="#18B84D" //green
+            } else {
+              if (tc.source.pod.zone.endsWith("-b")) {
+                srcColor="#33B8FF" //blue
+              } else if (tc.source.pod.zone.endsWith("-a")) {
+                srcColor="#AC1EF3" //purple
+              } else {
+                srcColor="#F3F01E" //yellow
+              }
+            }
             src = {
               "key": tc.source.ip,
               "text": tc.source.pod!=undefined? tc.source.pod.name + "\n" + tc.source.ip +"\n" + tc.source.pod.zone:"client: " + tc.source.ip,
-              "color": tc.source.pod!=undefined? "#33B8FF":"#18B84D"
+              "color": srcColor
             }
             
+            if (tc.destination.pod.zone.endsWith("-b")) {
+              dstColor="#33B8FF" //blue
+            } else if (tc.destination.pod.zone.endsWith("-a")) {
+              dstColor="#AC1EF3" //purple
+            } else {
+              dstColor="#F3F01E" //yellow
+              
+            }
             dst = {
               "key": tc.destination.ip,
               "text": tc.destination.pod.name + "\n" + tc.destination.ip +"\n" + tc.destination.pod.zone,
-              "color": "#33B8FF"
-            }
-            
+              "color": dstColor
+            }            
 
             link = {
               "from": tc.source.ip,
@@ -283,18 +381,28 @@
   </script>
 
 <div id="sample">
+
+  <div>
+    <div>
+      <p>
+        <button onclick="call_initial()">Initial diagram</button><input id="initialUrl" type="text" value="http://34.143.247.18/initial" size="50%"/>
+      </p>
+    </div>
+    <!-- #33B8FF/bulue #18B84D/green  #F3F01E/yellow-->
+    <textarea id="initialModel" style="border: 1px solid black;  width:98.9%;height:50px; position: relative;">run-tracker::tracker-svc-1-,tracker-svc-2-,tracker-svc-3-,tracker-svc-4-</textarea>
+  </div>
+
   <div id="myDiagramDiv" style="border: 1px solid black; width: 99%; height: 400px; position: relative; -webkit-tap-highlight-color: rgba(255, 255, 255, 0);"><canvas tabindex="0" width="2468" height="1696" style="position: absolute; top: 0px; left: 0px; z-index: 2; user-select: none; touch-action: none; width: 1234px; height: 848px;">This text is displayed if your browser does not support the Canvas HTML element.</canvas><div style="position: absolute; overflow: auto; width: 1234px; height: 848px; z-index: 1;"><div style="position: absolute; width: 1717.84px; height: 1px;"></div></div></div>
 
   <div>
     <div>
       <p>
-        <button onclick="load()">Loading data for new diagram</button>
+        <!-- <button onclick="load()">Load data for diagram</button> -->
         <button onclick="call_trip()">Send request to "/trip"</button> <input id="trackerUrl" type="text" value="http://34.143.247.18/trip" size="50%"/>
       </p>
     </div>
     <!-- #33B8FF/bulue #18B84D/green  #F3F01E/yellow-->
-    <textarea id="mySavedModel" style="width:99%;height:250px" readonly="true">
-    </textarea>
+    <textarea id="mySavedModel" style="border: 1px solid black;  width:98.9%;height:250px; position: relative;" readonly="true"></textarea>
   </div>
 
   </body>

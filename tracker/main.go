@@ -7,6 +7,8 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -32,10 +34,11 @@ type P2p struct {
 	Number      int    `json:"number"`
 	Source      Point  `json:"source"`
 	Destination Point  `json:"destination"`
-	Method      string `json:"rethod"`
+	Method      string `json:"method,omitempty"`
 	RequestURI  string `json:"request_uri,omitempty"`
 	Reqest      string `json:"reqest,omitempty"`
-	Response    string `json:"response"`
+	Response    string `json:"response,omitempty"`
+	Latency     int64  `json:"latency,omitempty"`
 }
 
 type Point struct {
@@ -46,9 +49,10 @@ type Point struct {
 type Pod struct {
 	Namespace string `json:"namespace"`
 	Name      string `json:"name"`
-	NodeName  string `json:"node_name"`
-	NodeIp    string `json:"node_ip"`
-	Zone      string `json:"zone"`
+	NodeName  string `json:"node_name,omitempty"`
+	NodeIp    string `json:"node_ip,omitempty"`
+	Zone      string `json:"zone,omitempty"`
+	PodIp     string `json:"pod_ip,omitempty"`
 }
 
 // Get Nodes information from Kubernetes API
@@ -155,7 +159,7 @@ func buildResponse() string {
 	return "StatusOK from " + getLocalIP()
 }
 
-// Call /trip API and return TripDetail
+// Inter-call API (/trip) and return TripDetail
 func callTrip(url string) TripDetail {
 	log.Info().Str("url", url).Send()
 	if url != "null" && url != "" {
@@ -171,6 +175,7 @@ func callTrip(url string) TripDetail {
 		req.Header.Add("x-node-name", getNodeName())
 		req.Header.Add("x-node-ip", getNodeIP(getNodeName()))
 		req.Header.Add("x-zone", getZone(getNodeName()))
+		req.Header.Add("x-request-start", strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10))
 		res, err := client.Do(req)
 		if err != nil {
 			log.Error().Interface("err", err).Msg("client.Do")
@@ -187,7 +192,7 @@ func callTrip(url string) TripDetail {
 	return nil
 }
 
-// /trip API
+// API (/trip) - get TripDetail
 func trip(c *gin.Context) {
 	var td TripDetail
 	whoami := c.Param("whoami")
@@ -197,9 +202,13 @@ func trip(c *gin.Context) {
 		td = append(td, ttd...)
 	}
 
+	//Get one-way trip latency: A->B / put time into header & calculate
+	start, _ := strconv.ParseInt(c.Request.Header.Get("x-request-start"), 10, 64)
+	end := time.Now().UnixNano() / int64(time.Millisecond)
 	// Get remote client IP if it's first call
 	cltIp := c.Request.Header.Get("x-pod-ip")
 	if cltIp == "" {
+		//TODO: Get external IP when call from inside Pod
 		cltIp = c.ClientIP()
 	}
 	src := Point{
@@ -214,6 +223,7 @@ func trip(c *gin.Context) {
 			NodeName:  c.Request.Header.Get("x-node-name"),
 			NodeIp:    c.Request.Header.Get("x-node-ip"),
 			Zone:      c.Request.Header.Get("x-zone"),
+			PodIp:     cltIp,
 		}
 	}
 	p2p := P2p{
@@ -227,14 +237,112 @@ func trip(c *gin.Context) {
 				NodeName:  getNodeName(),
 				NodeIp:    getNodeIP(getNodeName()),
 				Zone:      getZone(getNodeName()),
+				PodIp:     getLocalIP(),
 			},
 		},
 		Method:     c.Request.Method,
 		RequestURI: c.Request.RequestURI,
 		Response:   buildResponse(),
+		Latency:    end - start,
 	}
-	log.Info().Interface("return", p2p).Send()
 	td = append(td, p2p)
+	log.Info().Interface("return", td).Msg("trip()")
+	c.JSON(http.StatusOK, &td)
+}
+
+func contains(s []string, str string) bool {
+
+	for _, v := range s {
+		if strings.HasPrefix(str, v) {
+			log.Debug().Str("str", str).Str("prefix", v).Msg("true")
+			return true
+		}
+	}
+	log.Debug().Interface("all_prefix", s).Str("str", str).Msg("false")
+	return false
+}
+
+// API (/initial) - get all pods as per request
+func getInitialPods(c *gin.Context) {
+	buf, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		log.Error().Interface("err", err).Msg("Read request body")
+	}
+	log.Info().Str("request_str", string(buf)).Send()
+
+	strs := strings.Split(string(buf), "::")
+	ns := strs[0]
+	prefixs := strings.Split(strs[1], ",")
+	log.Info().Strs("prefixs", prefixs).Send()
+
+	// creates the in-cluster config
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		log.Fatal().Interface("err", err).Msg("rest.InClusterConfig")
+	}
+	// creates the clientset
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		log.Fatal().Interface("err", err).Msg("kubernetes.NewForConfig")
+	}
+
+	pods, err := clientset.CoreV1().Pods(ns).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		time.Sleep(500 * time.Millisecond)
+		pods, err = clientset.CoreV1().Pods(ns).List(context.TODO(), metav1.ListOptions{})
+		if err != nil {
+			log.Fatal().Interface("err", err).Msg("clientset.CoreV1.Nodes.List")
+		}
+	}
+	//Scanning all pods
+	allPods := make(map[string]Pod)
+	for _, p := range pods.Items {
+		log.Info().Str("pod", p.Name).Str("pod_status_podip", p.Status.PodIP).Send()
+		if contains(prefixs, p.Name) && p.Status.PodIP != "" {
+			node := p.Spec.NodeName
+			if _, ok := nodeZones[node]; !ok {
+				getNodes()
+			}
+			log.Info().Str("pod", p.Name).Msg("Added into allPods")
+			allPods[p.Name] = Pod{
+				Namespace: p.Namespace,
+				Name:      p.Name,
+				NodeName:  node,
+				NodeIp:    nodeIps[node],
+				Zone:      nodeZones[node],
+				PodIp:     p.Status.PodIP,
+			}
+		}
+	}
+
+	//Build possible links as per pods
+	var td TripDetail
+	for i := 0; i < len(prefixs); i++ {
+		for _, pSrc := range allPods {
+			if strings.HasPrefix(pSrc.Name, prefixs[i]) && (i+1) < len(prefixs) {
+				for _, pDst := range allPods {
+					if strings.HasPrefix(pDst.Name, prefixs[i+1]) {
+						src := pSrc
+						dst := pDst
+						p2p := P2p{
+							Number: 0,
+							Source: Point{
+								Ip:  src.PodIp,
+								Pod: &src,
+							},
+							Destination: Point{
+								Ip:  dst.PodIp,
+								Pod: &dst,
+							},
+						}
+						log.Info().Str("src", pSrc.Name).Str("dst", pDst.Name).Msg("checking out src->dst")
+						td = append(td, p2p)
+					}
+				}
+			}
+		}
+	}
+	log.Info().Interface("return", td).Msg("getInitialPods()")
 	c.JSON(http.StatusOK, &td)
 }
 
@@ -242,6 +350,7 @@ func router(ctx context.Context, r *gin.Engine) *gin.Engine {
 	log.Info().Interface("ctx", ctx).Msg("context.Context pairs")
 	r.GET("/trip", trip)
 	r.GET("/trip/:whoami", trip)
+	r.POST("/initial", getInitialPods)
 
 	// ko add static assets under ./kodata - https://github.com/google/ko#static-assets
 	if staticDir := os.Getenv("KO_DATA_PATH"); staticDir != "" {
