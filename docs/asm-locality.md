@@ -22,4 +22,6 @@ kubectl apply -f manifests/istio -n run-tracker
 endpoint=`kubectl get svc/istio-ingressgateway -n run-tracker -o "jsonpath={.status.loadBalancer.ingress[0].ip}"`
 curl -v http://${endpoint}/trip |jq
 
+# Or use browser to access http://${endpoint}/tracker-ui
+
 ```
