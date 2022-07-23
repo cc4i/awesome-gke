@@ -3,7 +3,7 @@
 Create a place to help people better leveraging GKE & Anthos products in actions, includes various demo and tutorials for different scenarios. 
 
 ## 1. Infrastructure
-### 1.1. Place Pods into nodes in same zone with high availability
+### 1.1. [Place Pods into nodes in single zone with high availability](./docs/single-zone.md)
 > The cluster has multiple node pools for cross different zones, one zone for primary and one for standby. Using Affinity/Anti-affinity to place Pods into nodes in primary zone and shift to standby zone when there's zonal failure.
 <br>
 
