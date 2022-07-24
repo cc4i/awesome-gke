@@ -5,6 +5,7 @@ go 1.17
 require (
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.8.1
+	github.com/google/uuid v1.1.2
 	github.com/rs/zerolog v1.27.0
 	k8s.io/apimachinery v0.24.3
 	k8s.io/client-go v0.24.3

@@ -14,12 +14,29 @@ build:
       dependencies:
         paths:
           - kodata
+          - ks
+          - trip
           - .
     platforms:
       - linux/amd64
 
 deploy:
   kustomize:
-    paths: ["manifests/examples/locality"]
-    
+    paths: 
+      - ./manifests/examples/locality/.
+    # buildArgs:
+    #   - "--load-restrictor LoadRestrictionsNone"
+  # kubectl:
+  #   manifests:
+  #     - manifests/base/ns-rev.yaml
+  #     - manifests/base/service-account.yaml
+  #     - manifests/deploy/deploy-svc-1.yaml
+  #     - manifests/service/svc-1.yaml
+  #     - manifests/deploy/deploy-svc-2.yaml
+  #     - manifests/service/svc-2.yaml
+  #     - manifests/deploy/deploy-svc-3.yaml
+  #     - manifests/service/svc-3.yaml
+  #     - manifests/deploy/deploy-svc-4.yaml
+  #     - manifests/service/svc-4.yaml
+          
   statusCheck: true
