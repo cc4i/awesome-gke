@@ -1,9 +1,0 @@
-
-namespace: run-tracker
-
-resources:
-  - ../../base
-  - ../../istio
-  - ../../deploy
-  - ../../service
-
