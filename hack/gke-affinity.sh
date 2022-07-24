@@ -39,7 +39,7 @@ gcloud beta container --project "${PROJECT_ID}" node-pools create "np-${INSTANCE
     --region "${REGION}" \
     --machine-type "${INSTANCE_TYPE}" --image-type "COS_CONTAINERD" --disk-type "pd-standard" --disk-size "100" \
     --metadata disable-legacy-endpoints=true --scopes "https://www.googleapis.com/auth/cloud-platform" \
-    --num-nodes "2" \
+    --num-nodes "4" \
     --enable-autoupgrade --enable-autorepair \
     --max-surge-upgrade 1 --max-unavailable-upgrade 0 \
     --max-pods-per-node "30" \
