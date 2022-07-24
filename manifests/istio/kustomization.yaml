@@ -1,0 +1,3 @@
+resources:
+  - ingress-gateway.yaml
+  - svc-locality.yaml

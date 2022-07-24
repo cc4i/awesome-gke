@@ -1,0 +1,5 @@
+resources:
+  - deploy-svc-1.yaml
+  - deploy-svc-2.yaml
+  - deploy-svc-3.yaml
+  - deploy-svc-4.yaml

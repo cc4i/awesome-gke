@@ -19,18 +19,7 @@ build:
       - linux/amd64
 
 deploy:
-  kubectl:
-    defaultNamespace: run-tracker
-    manifests:
-    - manifests/ns-rev.yaml
-    - manifests/service-account.yaml
-    - manifests/deploy/deploy-svc-1.yaml
-    - manifests/svc-1.yaml
-    - manifests/deploy/deploy-svc-2.yaml
-    - manifests/svc-2.yaml
-    - manifests/deploy/deploy-svc-3.yaml
-    - manifests/svc-3.yaml
-    - manifests/deploy/deploy-svc-4.yaml
-    - manifests/svc-4.yaml
+  kustomize:
+    paths: ["manifests/examples/locality"]
     
   statusCheck: true

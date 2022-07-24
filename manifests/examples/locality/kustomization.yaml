@@ -1,0 +1,16 @@
+
+namespace: run-tracker
+
+resources:
+  - ../../base
+  - ../../deploy-affinity
+  - ../../service
+  
+patches:
+  - patch: |-
+      - op: replace
+        path: /spec/type
+        value: loadBalancer   
+    target:
+      kind: Service
+      name: svc-1

@@ -1,0 +1,3 @@
+resources:
+  - ns-rev.yaml
+  - service-account.yaml
