@@ -375,8 +375,6 @@
       }
 
     }
-    
-
     window.addEventListener('DOMContentLoaded', init);
   </script>
 
@@ -405,5 +403,13 @@
     <textarea id="mySavedModel" style="border: 1px solid black;  width:98.9%;height:250px; position: relative;" readonly="true"></textarea>
   </div>
 
+  <script>
+    let url = window.location.href
+    const urls = url.split("/")
+    console.log(urls)
+    document.getElementById("initialUrl").value="http://"+urls[2]+"/initial"
+    document.getElementById("trackerUrl").value="http://"+urls[2]+"/trip"
+
+  </script>
   </body>
   </html>
