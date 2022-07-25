@@ -12,6 +12,7 @@ import (
 
 // Node Name -> Node
 var NodesInfo map[string]Node
+var NextUpdate4NodesInfo time.Time
 
 type Node struct {
 	Ip   string `json:"ip"`
@@ -27,7 +28,7 @@ type NodeInterface interface {
 // Get Nodes information from Kubernetes API
 func (n *Node) GetNodes() error {
 
-	if NodesInfo == nil {
+	if NodesInfo == nil || NextUpdate4NodesInfo.After(time.Now()) {
 		NodesInfo = make(map[string]Node)
 
 		// creates the in-cluster config
@@ -74,6 +75,7 @@ func (n *Node) GetNodes() error {
 			}
 		}
 		log.Info().Interface("nodes", NodesInfo).Send()
+		NextUpdate4NodesInfo = time.Now().Add(300 * time.Second)
 	}
 
 	return nil
