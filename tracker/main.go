@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io/ioutil"
@@ -94,6 +95,14 @@ func startTrip(c *gin.Context) {
 			log.Error().Interface("error", err).Msg("fail to trip.SaveTd2Redis()")
 		}
 	}
+	if masterTacker := os.Getenv("MASTER_TRACKER"); masterTacker != "" {
+		//TODO: Identify where data is came from! tp.From = "AWS"
+		sbuf, _ := json.Marshal(tp)
+		_, err := http.Post(masterTacker, "application/json", bytes.NewReader(sbuf))
+		if err != nil {
+			log.Error().Interface("err", err).Msg("startTrip()->http.Post.MASTER_TRACKER")
+		}
+	}
 	c.JSON(http.StatusOK, tp.Detail)
 }
 
@@ -155,7 +164,20 @@ func clearTrips(c *gin.Context) {
 
 // Send trips back to master tracker
 func syncTrips(c *gin.Context) {
-	os.Getenv("MASTER_TRACKER")
+	//masterTacker := os.Getenv("MASTER_TRACKER")
+
+	if buf, err := ioutil.ReadAll(c.Request.Body); err != nil {
+		log.Error().Interface("err", err).Msg("syncTrips()->ReadAll()")
+	} else {
+		var td trip.TripDetail
+		if err = json.Unmarshal(buf, &td); err != nil {
+			rbuf, _ := json.Marshal(td.Detail)
+			if err = trip.SaveTd2Redis(td.Id, rbuf); err != nil {
+				log.Error().Interface("err", err).Msg("syncTrips()->SaveTd2Redis()")
+			}
+		}
+	}
+	c.String(http.StatusOK, "Synced")
 }
 
 func router(ctx context.Context, r *gin.Engine) *gin.Engine {

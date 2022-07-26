@@ -20,6 +20,7 @@ import (
 type TripDetail struct {
 	Id     string `json:"id"`
 	Detail []P2p  `json:"detail"`
+	From   string `json:"from,omitempty"`
 }
 
 // Single call source -> destination
