@@ -41,11 +41,11 @@ spec:
             containerPort: 8000
         resources:
           requests: 
-            cpu: 100m
+            cpu: 200m
             memory: 128Mi
           limits:
             cpu: 500m
-            memory: 128Mi
+            memory: 256Mi
         readinessProbe:
           initialDelaySeconds: 5
           periodSeconds: 5
