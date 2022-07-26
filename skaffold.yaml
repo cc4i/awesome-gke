@@ -24,8 +24,8 @@ deploy:
   kustomize:
     paths: 
       - ./manifests/examples/locality/.
-    # buildArgs:
-    #   - "--load-restrictor LoadRestrictionsNone"
+  #   buildArgs:
+  #     - "--load-restrictor LoadRestrictionsNone"
   # kubectl:
   #   manifests:
   #     - manifests/base/ns-rev.yaml

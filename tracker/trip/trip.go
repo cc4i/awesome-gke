@@ -43,6 +43,7 @@ type Point struct {
 type TripInterface interface {
 	GetInitialPods(ns string, prefixs []string) error
 	CallTrip(url string) error
+	TripHistory() error
 }
 
 func contains(s []string, str string) bool {
@@ -177,6 +178,20 @@ func (td *TripDetail) CallTrip(kp *ks.Pod, url string) error {
 		log.Info().Interface("remote_return", td.Detail).Send()
 		return nil
 
+	}
+	return nil
+}
+
+func (td *TripDetail) TripHistory() error {
+	if maps, err := QueryAllTds4Redis(); err != nil {
+		return err
+	} else {
+
+		for _, val := range maps {
+			var ttd []P2p
+			json.Unmarshal([]byte(val), &ttd)
+			td.Detail = append(td.Detail, ttd...)
+		}
 	}
 	return nil
 }

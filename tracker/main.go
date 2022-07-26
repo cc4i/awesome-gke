@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -86,6 +87,13 @@ func startTrip(c *gin.Context) {
 	}
 	tp.Detail = append(tp.Detail, p2p)
 	log.Info().Interface("return", tp.Detail).Msg("startTrip()")
+	// Save to redis, only once
+	if whoami != "pod" {
+		buf, _ := json.Marshal(tp.Detail)
+		if err := trip.SaveTd2Redis(tp.Id, buf); err != nil {
+			log.Error().Interface("error", err).Msg("fail to trip.SaveTd2Redis()")
+		}
+	}
 	c.JSON(http.StatusOK, tp.Detail)
 }
 
@@ -123,6 +131,33 @@ func doPanic(c *gin.Context) {
 	os.Exit(255)
 }
 
+// Load all trips from storage
+func allTrips(c *gin.Context) {
+	// Initial TripDetail with UUID
+	tp := &trip.TripDetail{
+		Id: uuid.New().String(),
+	}
+	if err := tp.TripHistory(); err != nil {
+		log.Error().Interface("error", err).Msg("allTrips()")
+		c.JSON(http.StatusInternalServerError, err)
+	} else {
+		log.Info().Interface("return", tp.Detail).Msg("allTrips()")
+		c.JSON(http.StatusOK, tp.Detail)
+	}
+
+}
+
+// Clear trip history in redis
+func clearTrips(c *gin.Context) {
+	trip.ClearHistory()
+	c.String(http.StatusOK, "Cleared")
+}
+
+// Send trips back to master tracker
+func syncTrips(c *gin.Context) {
+	os.Getenv("MASTER_TRACKER")
+}
+
 func router(ctx context.Context, r *gin.Engine) *gin.Engine {
 	log.Info().Interface("ctx", ctx).Msg("context.Context pairs")
 	r.GET("/trip", startTrip)
@@ -138,6 +173,9 @@ func router(ctx context.Context, r *gin.Engine) *gin.Engine {
 	}
 
 	r.GET("/panic", doPanic)
+	r.GET("/all-trips", allTrips)
+	r.GET("/clear-trips", clearTrips)
+	r.POST("/sync-trips", syncTrips)
 	return r
 }
 

@@ -5,7 +5,7 @@
   <script src="https://unpkg.com/gojs@2.2.12/release/go.js"></script>
   
   <div id="allSampleContent" class="p-4 w-full">
-    <script id="code">
+  <script id="code">
   class SankeyLayout extends go.LayeredDigraphLayout {
     // determine the desired height of each node/vertex,
     // based on the thicknesses of the connected links;
@@ -220,7 +220,7 @@
     }
 
 
-    function call_initial() {
+    async function call_initial(fnh) {
       const xhr = new XMLHttpRequest()
       xhr.open("POST", document.getElementById("initialUrl").value)
       xhr.setRequestHeader("Content-Type", "text/plain")
@@ -231,7 +231,11 @@
           console.log(data)
           document.getElementById("mySavedModel").value = JSON.stringify(data,  undefined, 4)
 
-          model = myDiagram.model
+          model = { 
+            "class": "go.GraphLinksModel",
+            "nodeDataArray": [], //{"key":"Client1", "text":"192.168.1.1", "color":"#F3F01E"},
+            "linkDataArray": [] //{"from":"Client1", "to":"svc-1-7dfdc5fdff-lg7d2", "width":20},
+          }
           keys =[]
           for (let i=0; i<model.nodeDataArray.length; i++) {
             keys.push(model.nodeDataArray[i].key)
@@ -286,7 +290,10 @@
           }
           console.log( model.linkDataArray)
           myDiagram.model = go.Model.fromJson(model)
-            ///
+          ///
+          if (fnh != undefined) {
+            history()
+          }
 
         } else if (xhr.status === 404) {
           console.log("No records found")
@@ -295,7 +302,6 @@
       }
       xhr.send(document.getElementById("initialModel").value)
 
-
     }
 
 
@@ -303,6 +309,86 @@
     function call_trip() {
       const xhr = new XMLHttpRequest()
       xhr.open("GET", document.getElementById("trackerUrl").value)
+      xhr.send()
+
+      xhr.onload = function() {
+        if (xhr.status === 200) {
+          //parse JSON datax`x
+          data = JSON.parse(xhr.responseText)
+          console.log(data)
+          document.getElementById("mySavedModel").value = JSON.stringify(data,  undefined, 4)
+
+          model =  myDiagram.model
+          keys =[]
+          for (let i=0; i<model.nodeDataArray.length; i++) {
+            keys.push(model.nodeDataArray[i].key)
+          }
+          for (let i=0; i<data.length; i++) {
+            tc = data[i]
+            if (tc.source.pod==undefined) {
+              srcColor="#18B84D" //green
+            } else {
+              if (tc.source.pod.zone.endsWith("b")) {
+                srcColor="#33B8FF" //blue
+              } else if (tc.source.pod.zone.endsWith("a")) {
+                srcColor="#AC1EF3" //purple
+              } else {
+                srcColor="#F3F01E" //yellow
+              }
+            }
+            src = {
+              "key": tc.source.ip,
+              "text": tc.source.pod!=undefined? tc.source.pod.name + "\n" + tc.source.ip +"\n" + tc.source.pod.zone:"client: " + tc.source.ip,
+              "color": srcColor
+            }
+            
+            if (tc.destination.pod.zone.endsWith("b")) {
+              dstColor="#33B8FF" //blue
+            } else if (tc.destination.pod.zone.endsWith("a")) {
+              dstColor="#AC1EF3" //purple
+            } else {
+              dstColor="#F3F01E" //yellow
+              
+            }
+            dst = {
+              "key": tc.destination.ip,
+              "text": tc.destination.pod.name + "\n" + tc.destination.ip +"\n" + tc.destination.pod.zone,
+              "color": dstColor
+            }            
+
+            link = {
+              "from": tc.source.ip,
+              "to": tc.destination.ip,
+              "width":10
+            }
+            if (!keys.includes(src.key)) { 
+              model.nodeDataArray.push(src) 
+              keys.push(src.key)
+            }
+            if (!keys.includes(dst.key)) { 
+              model.nodeDataArray.push(dst)
+              keys.push(dst.key)
+            }
+            model.linkDataArray.push(link)
+          }
+          console.log(JSON.stringify(model,  undefined, 4))
+          myDiagram.model = go.Model.fromJson(model)
+
+        } else if (xhr.status === 404) {
+          console.log("No records found")
+        }
+      }
+    }
+
+    function history() {
+
+      const xhr = new XMLHttpRequest()
+      trackerUrl = document.getElementById("trackerUrl").value
+      tUrls = trackerUrl.split("/")
+      console.log(tUrls)
+      hurl =  "http://"+tUrls[2]+"/all-trips"
+      console.log(hurl)
+      xhr.open("GET", hurl)
       xhr.send()
 
       xhr.onload = function() {
@@ -373,8 +459,37 @@
           console.log("No records found")
         }
       }
+    }
+
+    function load_history() {
+      call_initial(history)
+    }
+
+    function clear_history() {
+      const xhr = new XMLHttpRequest()
+      trackerUrl = document.getElementById("trackerUrl").value
+      tUrls = trackerUrl.split("/")
+      console.log(tUrls)
+      hurl =  "http://"+tUrls[2]+"/clear-trips"
+      console.log(hurl)
+      xhr.open("GET", hurl)
+      xhr.send()
+
+      xhr.onload = function() {
+        if (xhr.status === 200) {
+          model = { 
+              "class": "go.GraphLinksModel",
+              "nodeDataArray": [], //{"key":"Client1", "text":"192.168.1.1", "color":"#F3F01E"},
+              "linkDataArray": [] //{"from":"Client1", "to":"svc-1-7dfdc5fdff-lg7d2", "width":20},
+            }
+          myDiagram.model = go.Model.fromJson(model)
+        } else if (xhr.status === 404) {
+          console.log("No records found")
+        }
+      }
 
     }
+
     window.addEventListener('DOMContentLoaded', init);
   </script>
 
@@ -383,7 +498,9 @@
   <div>
     <div>
       <p>
-        <button onclick="call_initial()">Initial diagram</button><input id="initialUrl" type="text" value="http://34.143.247.18/initial" size="50%"/>
+        <button onclick="clear_history()">Clear History</button>
+        <button onclick="call_initial()">Initial diagram</button>
+        <input id="initialUrl" type="text" value="http://34.143.247.18/initial" size="80%"/>
       </p>
     </div>
     <!-- #33B8FF/bulue #18B84D/green  #F3F01E/yellow-->
@@ -395,21 +512,22 @@
   <div>
     <div>
       <p>
-        <!-- <button onclick="load()">Load data for diagram</button> -->
-        <button onclick="call_trip()">Send request to "/trip"</button> <input id="trackerUrl" type="text" value="http://34.143.247.18/trip" size="50%"/>
+        <button onclick="load_history()">Load History</button>
+        <button onclick="call_trip()">Send request to "/trip"</button> <input id="trackerUrl" type="text" value="http://34.143.247.18/trip" size="80%"/>
       </p>
     </div>
     <!-- #33B8FF/bulue #18B84D/green  #F3F01E/yellow-->
     <textarea id="mySavedModel" style="border: 1px solid black;  width:98.9%;height:250px; position: relative;" readonly="true"></textarea>
   </div>
 
+  <!--Setup IP of Tracker-->
   <script>
     let url = window.location.href
     const urls = url.split("/")
     console.log(urls)
     document.getElementById("initialUrl").value="http://"+urls[2]+"/initial"
     document.getElementById("trackerUrl").value="http://"+urls[2]+"/trip"
-
   </script>
+
   </body>
   </html>
