@@ -20,7 +20,6 @@ import (
 type TripDetail struct {
 	Id     string `json:"id"`
 	Detail []P2p  `json:"detail"`
-	From   string `json:"from,omitempty"`
 }
 
 // Single call source -> destination
@@ -42,7 +41,7 @@ type Point struct {
 }
 
 type TripInterface interface {
-	GetInitialPods(ns string, prefixs []string) error
+	GetInitialPods(from string, ns string, prefixs []string) error
 	CallTrip(url string) error
 	TripHistory() error
 }
@@ -60,7 +59,7 @@ func contains(s []string, str string) bool {
 }
 
 // Get intial relations of pods under specificed namespace & call chain
-func (td *TripDetail) GetInitialPods(ns string, prefixs []string) error {
+func (td *TripDetail) GetInitialPods(from string, ns string, prefixs []string) error {
 
 	// creates the in-cluster config
 	config, err := rest.InClusterConfig()
@@ -112,9 +111,30 @@ func (td *TripDetail) GetInitialPods(ns string, prefixs []string) error {
 	}
 
 	//Build possible links as per pods
+
 	for i := 0; i < len(prefixs); i++ {
+		//add from_nodes
+		if i == 0 {
+			for _, pSrc := range allPods {
+				if strings.HasPrefix(pSrc.Name, prefixs[i]) && (i+1) < len(prefixs) {
+					fsrc := pSrc
+					fP2p := P2p{
+						Number: 0,
+						Source: Point{
+							Ip: from,
+						},
+						Destination: Point{
+							Ip:  fsrc.PodIp,
+							Pod: &fsrc,
+						},
+					}
+					td.Detail = append(td.Detail, fP2p)
+				}
+			}
+		}
 		for _, pSrc := range allPods {
 			if strings.HasPrefix(pSrc.Name, prefixs[i]) && (i+1) < len(prefixs) {
+				// add rest of nodes
 				for _, pDst := range allPods {
 					if strings.HasPrefix(pDst.Name, prefixs[i+1]) {
 						src := pSrc

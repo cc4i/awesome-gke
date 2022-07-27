@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"io/ioutil"
@@ -20,6 +19,9 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
+
+// where Tracker is located to
+var whereami string
 
 // Get the URL for next call from env variable
 func getNextCall() string {
@@ -72,11 +74,27 @@ func startTrip(c *gin.Context) {
 		src.Pod = srcPod
 	}
 
+	wp := trip.Point{
+		Ip: whereami,
+	}
+	var swp trip.Point
+	if c.Request.Header.Get("x-pod-ip") == "" {
+		fp2p := trip.P2p{
+			Number:      0,
+			Source:      src,
+			Destination: wp,
+		}
+		tp.Detail = append(tp.Detail, fp2p)
+		swp = wp
+	} else {
+		swp = src
+	}
+
 	//Destination
 	dstPod := &ks.Pod{}
 	p2p := trip.P2p{
-		Number: len(tp.Detail) + 1,
-		Source: src,
+		Number: len(tp.Detail),
+		Source: swp,
 		Destination: trip.Point{
 			Ip:  dstPod.GetLocalIP(),
 			Pod: dstPod.BuildPod(),
@@ -95,19 +113,13 @@ func startTrip(c *gin.Context) {
 			log.Error().Interface("error", err).Msg("fail to trip.SaveTd2Redis()")
 		}
 	}
-	if masterTacker := os.Getenv("MASTER_TRACKER"); masterTacker != "" {
-		//TODO: Identify where data is came from! tp.From = "AWS"
-		sbuf, _ := json.Marshal(tp)
-		_, err := http.Post(masterTacker, "application/json", bytes.NewReader(sbuf))
-		if err != nil {
-			log.Error().Interface("err", err).Msg("startTrip()->http.Post.MASTER_TRACKER")
-		}
-	}
 	c.JSON(http.StatusOK, tp.Detail)
 }
 
 // API (/initial) - get all pods as per request
 func getInitialPods(c *gin.Context) {
+	from := c.Param("from")
+	whereami = from
 	buf, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
 		log.Error().Interface("err", err).Msg("Read request body")
@@ -124,7 +136,7 @@ func getInitialPods(c *gin.Context) {
 		Id: uuid.New().String(),
 	}
 
-	if err = tp.GetInitialPods(ns, prefixs); err != nil {
+	if err = tp.GetInitialPods(whereami, ns, prefixs); err != nil {
 		log.Error().Interface("error", err).Msg("getInitialPods()")
 		c.JSON(http.StatusInternalServerError, err)
 	} else {
@@ -162,29 +174,11 @@ func clearTrips(c *gin.Context) {
 	c.String(http.StatusOK, "Cleared")
 }
 
-// Send trips back to master tracker
-func syncTrips(c *gin.Context) {
-	//masterTacker := os.Getenv("MASTER_TRACKER")
-
-	if buf, err := ioutil.ReadAll(c.Request.Body); err != nil {
-		log.Error().Interface("err", err).Msg("syncTrips()->ReadAll()")
-	} else {
-		var td trip.TripDetail
-		if err = json.Unmarshal(buf, &td); err != nil {
-			rbuf, _ := json.Marshal(td.Detail)
-			if err = trip.SaveTd2Redis(td.Id, rbuf); err != nil {
-				log.Error().Interface("err", err).Msg("syncTrips()->SaveTd2Redis()")
-			}
-		}
-	}
-	c.String(http.StatusOK, "Synced")
-}
-
 func router(ctx context.Context, r *gin.Engine) *gin.Engine {
 	log.Info().Interface("ctx", ctx).Msg("context.Context pairs")
 	r.GET("/trip", startTrip)
 	r.GET("/trip/:whoami", startTrip)
-	r.POST("/initial", getInitialPods)
+	r.POST("/initial/:from", getInitialPods)
 
 	// ko add static assets under ./kodata - https://github.com/google/ko#static-assets
 	if staticDir := os.Getenv("KO_DATA_PATH"); staticDir != "" {
@@ -197,11 +191,11 @@ func router(ctx context.Context, r *gin.Engine) *gin.Engine {
 	r.GET("/panic", doPanic)
 	r.GET("/all-trips", allTrips)
 	r.GET("/clear-trips", clearTrips)
-	r.POST("/sync-trips", syncTrips)
 	return r
 }
 
 func main() {
+	whereami = "gcp"
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	if gin.IsDebugging() {

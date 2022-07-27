@@ -219,89 +219,138 @@
 
     }
 
+    function getColor(why) {
 
-    async function call_initial(fnh) {
-      const xhr = new XMLHttpRequest()
-      xhr.open("POST", document.getElementById("initialUrl").value)
-      xhr.setRequestHeader("Content-Type", "text/plain")
-      xhr.onreadystatechange = function() {
-        if (this.readyState === XMLHttpRequest.DONE && this.status === 200) {
-
-          data = JSON.parse(xhr.responseText)
-          console.log(data)
-          document.getElementById("mySavedModel").value = JSON.stringify(data,  undefined, 4)
-
-          model = { 
-            "class": "go.GraphLinksModel",
-            "nodeDataArray": [], //{"key":"Client1", "text":"192.168.1.1", "color":"#F3F01E"},
-            "linkDataArray": [] //{"from":"Client1", "to":"svc-1-7dfdc5fdff-lg7d2", "width":20},
-          }
-          keys =[]
-          for (let i=0; i<model.nodeDataArray.length; i++) {
-            keys.push(model.nodeDataArray[i].key)
-          }
-          for (let i=0; i<data.length; i++) {
-            tc = data[i]
-            if (tc.source.pod==undefined) {
-              srcColor="#18B84D" //green
-            } else {
-              if (tc.source.pod.zone.endsWith("b")) {
-                srcColor="#33B8FF" //blue
-              } else if (tc.source.pod.zone.endsWith("a")) {
-                srcColor="#AC1EF3" //purple
-              } else {
-                srcColor="#F3F01E" //yellow
-              }
-            }
-            src = {
-              "key": tc.source.ip,
-              "text": tc.source.pod!=undefined? tc.source.pod.name + "\n" + tc.source.ip +"\n" + tc.source.pod.zone:"client: " + tc.source.ip,
-              "color": srcColor
-            }
-            
-            if (tc.destination.pod.zone.endsWith("b")) {
-              dstColor="#33B8FF" //blue
-            } else if (tc.destination.pod.zone.endsWith("a")) {
-              dstColor="#AC1EF3" //purple
-            } else {
-              dstColor="#F3F01E" //yellow
-              
-            }
-            dst = {
-              "key": tc.destination.ip,
-              "text": tc.destination.pod.name + "\n" + tc.destination.ip +"\n" + tc.destination.pod.zone,
-              "color": dstColor
-            }
-            
-            link = {
-              "from": tc.source.ip,
-              "to": tc.destination.ip,
-              "width":1
-            }
-            if (!keys.includes(src.key)) { 
-              model.nodeDataArray.push(src) 
-              keys.push(src.key)
-            }
-            if (!keys.includes(dst.key)) { 
-              model.nodeDataArray.push(dst)
-              keys.push(dst.key)
-            }
-            model.linkDataArray.push(link)
-          }
-          console.log( model.linkDataArray)
-          myDiagram.model = go.Model.fromJson(model)
-          ///
-          if (fnh != undefined) {
-            history()
-          }
-
-        } else if (xhr.status === 404) {
-          console.log("No records found")
+      if (why.pod!=undefined) {
+        if (why.pod.zone.endsWith("b")) {
+          return "#33B8FF" //blue
+        } else if (why.pod.zone.endsWith("a")) {
+          return "#AC1EF3" //purple
+        } else {
+          return "#F3F01E" //yellow      
         }
-
+      } else {
+        if (why.ip=="gcp") {
+          return "#f54295"
+        } else if (why.ip=="azure") {
+          return "#42f584"
+        } else if (why.ip=="aws") {
+          return "#f5ad42"
+        } else {
+          return "#18B84D"
+        }
       }
+
+    }
+
+    function getName(tcp) {
+      if (tcp.pod!=undefined) {
+        return tcp.pod.name + "\n" + tcp.ip +"\n" + tcp.pod.zone
+      } else {
+        if (tcp.ip=="aws" || tcp.ip=="azure" || tcp.ip=="gcp") {
+          return tcp.ip.toUpperCase()
+        } else {
+          return "Client: " + tcp.ip
+        }
+      }
+    
+    }
+
+    // comvert map to json object
+    function mapToObj(inputMap) {
+      let obj = {};
+
+      inputMap.forEach(function(value, key){
+          obj[key] = value
+      });
+
+      return obj;
+    }
+
+    function post_tracker(url) {
+
+      const xhr = new XMLHttpRequest()
+      console.log("url->", url)
+      xhr.open("POST", url, false)
+      xhr.setRequestHeader("Content-Type", "text/plain")
       xhr.send(document.getElementById("initialModel").value)
 
+      // xhr.onreadystatechange = function() {
+        if (xhr.status === 200) {
+          return JSON.parse(xhr.responseText)
+        } else {
+          console.log("post_tracker()->","No records found: " + this.status)
+          return {}
+        }
+      // }
+      
+    
+    }
+
+
+    async function call_initial(fnh) {
+      
+      let result = new Map()
+      addrs = document.getElementById("initialUrl").value.split(",")
+      for (let i = 0; i < addrs.length; i++) {
+        hosts = addrs[i].split("::")
+        initUrl = "http://"+hosts[1]+"/initial/"+hosts[0]
+        let data  =  post_tracker(initUrl);
+        result.set(hosts[0], data)
+
+      }
+      console.log("call_initial()->", result)
+      document.getElementById("mySavedModel").value = JSON.stringify(mapToObj(result),  undefined, 4)
+
+      model = { 
+        "class": "go.GraphLinksModel",
+        "nodeDataArray": [], //{"key":"Client1", "text":"192.168.1.1", "color":"#F3F01E"},
+        "linkDataArray": [] //{"from":"Client1", "to":"svc-1-7dfdc5fdff-lg7d2", "width":20},
+      }
+      
+      result.forEach((mv, mk) => {
+        keys =[]
+        for (let i=0; i<model.nodeDataArray.length; i++) {
+          keys.push(model.nodeDataArray[i].key)
+        }
+        for (let i=0; i<mv.length; i++) {
+          tc = mv[i]
+          src = {
+            "key": tc.source.ip,
+            "text": getName(tc.source),
+            "color": getColor(tc.source)
+          }
+          
+          dst = {
+            "key": tc.destination.ip,
+            "text": getName(tc.destination),
+            "color": getColor(tc.destination)
+          }
+          
+          link = {
+            "from": tc.source.ip,
+            "to": tc.destination.ip,
+            "width":1
+          }
+          if (!keys.includes(src.key)) { 
+            model.nodeDataArray.push(src) 
+            keys.push(src.key)
+          }
+          if (!keys.includes(dst.key)) { 
+            model.nodeDataArray.push(dst)
+            keys.push(dst.key)
+          }
+          model.linkDataArray.push(link)
+        }
+        console.log( model.linkDataArray)
+        myDiagram.model = go.Model.fromJson(model)
+
+      })
+      ///
+      if (fnh != undefined) {
+        history()
+      }
+      
     }
 
 
@@ -325,35 +374,17 @@
           }
           for (let i=0; i<data.length; i++) {
             tc = data[i]
-            if (tc.source.pod==undefined) {
-              srcColor="#18B84D" //green
-            } else {
-              if (tc.source.pod.zone.endsWith("b")) {
-                srcColor="#33B8FF" //blue
-              } else if (tc.source.pod.zone.endsWith("a")) {
-                srcColor="#AC1EF3" //purple
-              } else {
-                srcColor="#F3F01E" //yellow
-              }
-            }
+
             src = {
               "key": tc.source.ip,
-              "text": tc.source.pod!=undefined? tc.source.pod.name + "\n" + tc.source.ip +"\n" + tc.source.pod.zone:"client: " + tc.source.ip,
-              "color": srcColor
+              "text": getName(tc.source),
+              "color": getColor(tc.source)
             }
             
-            if (tc.destination.pod.zone.endsWith("b")) {
-              dstColor="#33B8FF" //blue
-            } else if (tc.destination.pod.zone.endsWith("a")) {
-              dstColor="#AC1EF3" //purple
-            } else {
-              dstColor="#F3F01E" //yellow
-              
-            }
             dst = {
               "key": tc.destination.ip,
-              "text": tc.destination.pod.name + "\n" + tc.destination.ip +"\n" + tc.destination.pod.zone,
-              "color": dstColor
+              "text": getName(tc.destination),
+              "color": getColor(tc.destination)
             }            
 
             link = {
@@ -361,6 +392,7 @@
               "to": tc.destination.ip,
               "width":10
             }
+            console.log(JSON.stringify(link,  undefined, 4))
             if (!keys.includes(src.key)) { 
               model.nodeDataArray.push(src) 
               keys.push(src.key)
@@ -371,7 +403,7 @@
             }
             model.linkDataArray.push(link)
           }
-          console.log(JSON.stringify(model,  undefined, 4))
+          // console.log(JSON.stringify(model,  undefined, 4))
           myDiagram.model = go.Model.fromJson(model)
 
         } else if (xhr.status === 404) {
@@ -381,7 +413,6 @@
     }
 
     function history() {
-
       const xhr = new XMLHttpRequest()
       trackerUrl = document.getElementById("trackerUrl").value
       tUrls = trackerUrl.split("/")
@@ -405,35 +436,17 @@
           }
           for (let i=0; i<data.length; i++) {
             tc = data[i]
-            if (tc.source.pod==undefined) {
-              srcColor="#18B84D" //green
-            } else {
-              if (tc.source.pod.zone.endsWith("b")) {
-                srcColor="#33B8FF" //blue
-              } else if (tc.source.pod.zone.endsWith("a")) {
-                srcColor="#AC1EF3" //purple
-              } else {
-                srcColor="#F3F01E" //yellow
-              }
-            }
+        
             src = {
               "key": tc.source.ip,
-              "text": tc.source.pod!=undefined? tc.source.pod.name + "\n" + tc.source.ip +"\n" + tc.source.pod.zone:"client: " + tc.source.ip,
-              "color": srcColor
+              "text": getName(tc.source),
+              "color": getColor(tc.source)
             }
             
-            if (tc.destination.pod.zone.endsWith("b")) {
-              dstColor="#33B8FF" //blue
-            } else if (tc.destination.pod.zone.endsWith("a")) {
-              dstColor="#AC1EF3" //purple
-            } else {
-              dstColor="#F3F01E" //yellow
-              
-            }
             dst = {
               "key": tc.destination.ip,
-              "text": tc.destination.pod.name + "\n" + tc.destination.ip +"\n" + tc.destination.pod.zone,
-              "color": dstColor
+              "text": getName(tc.destination),
+              "color": getColor(tc.destination)
             }            
 
             link = {
@@ -494,13 +507,12 @@
   </script>
 
 <div id="sample">
-
   <div>
     <div>
       <p>
         <button onclick="clear_history()">Clear History</button>
         <button onclick="call_initial()">Initial diagram</button>
-        <input id="initialUrl" type="text" value="http://34.143.247.18/initial" size="80%"/>
+        <input id="initialUrl" type="text" value="gcp::35.198.228.135" size="100%"/>
       </p>
     </div>
     <!-- #33B8FF/bulue #18B84D/green  #F3F01E/yellow-->
@@ -513,7 +525,7 @@
     <div>
       <p>
         <button onclick="load_history()">Load History</button>
-        <button onclick="call_trip()">Send request to "/trip"</button> <input id="trackerUrl" type="text" value="http://34.143.247.18/trip" size="80%"/>
+        <button onclick="call_trip()">Send request to "/trip"</button> <input id="trackerUrl" type="text" value="http://35.198.228.135/trip" size="80%"/>
       </p>
     </div>
     <!-- #33B8FF/bulue #18B84D/green  #F3F01E/yellow-->
@@ -521,13 +533,13 @@
   </div>
 
   <!--Setup IP of Tracker-->
-  <script>
+  <!-- <script>
     let url = window.location.href
     const urls = url.split("/")
     console.log(urls)
     document.getElementById("initialUrl").value="http://"+urls[2]+"/initial"
     document.getElementById("trackerUrl").value="http://"+urls[2]+"/trip"
-  </script>
+  </script> -->
 
   </body>
   </html>
