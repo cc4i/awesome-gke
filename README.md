@@ -20,7 +20,7 @@ Create a place to help people better leveraging GKE & Anthos products in actions
 
 ### 4.2 [Anthos Service Mesh (ASM) + Locality Setting](./docs/asm-locality.md)
 
-> Deploy pods across the nodes in different zones to supports highly available and scalable, as well as leverage weight distrubution of Istio to reduce inter-zone traffic & cost.
+> Visualize pods across the nodes in different zones to supports highly available and scalable, as well as leverage weight distrubution of Istio to reduce inter-zone traffic & cost.
 
 
 ### 4.3 [GLB + Anthos Service Mesh (ASM) + Locality Setting](./docs/glb-locality.md)
