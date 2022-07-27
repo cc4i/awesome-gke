@@ -4,7 +4,7 @@ namespace: run-tracker
 resources:
   - ../../base
   - ../../redis
-  # - ../../istio
+  - ../../istio
   - ../../deploy
   - ../../service
 
