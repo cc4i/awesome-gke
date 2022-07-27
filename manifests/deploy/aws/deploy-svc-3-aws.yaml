@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment 
 metadata:
-  name: tracker-svc-1
+  name: tracker-svc-3
 spec:
-  replicas: 2
+  replicas: 3
   selector:
     matchLabels:
       app: tracker
-      svc: svc-1
+      svc: svc-3
   template:
     metadata:
       labels: 
         app: tracker
-        svc: svc-1
+        svc: svc-3
     spec:
       terminationGracePeriodSeconds: 20
       containers:
@@ -33,11 +33,9 @@ spec:
               fieldRef:
                 fieldPath: spec.nodeName
           - name: NEXT_CALL
-            value: http://svc-2.run-tracker.svc.cluster.local:8000/trip/pod
+            value: http://svc-4.run-tracker.svc.cluster.local:8000/trip/pod
           - name: REDIS_SERVER_ADDRESS
             value: redis-cart.run-tracker.svc.cluster.local:6379
-          - name: MASTER_TRACKER
-            value: http://<FQDN>:8000//sync-trips
         ports:
           - name: http
             containerPort: 8000

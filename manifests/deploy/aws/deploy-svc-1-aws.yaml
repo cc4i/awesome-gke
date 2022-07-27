@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment 
+metadata:
+  name: tracker-svc-1
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: tracker
+      svc: svc-1
+  template:
+    metadata:
+      labels: 
+        app: tracker
+        svc: svc-1
+    spec:
+      terminationGracePeriodSeconds: 20
+      containers:
+      - name: tracker
+        image:  us-central1-docker.pkg.dev/play-with-anthos-340801/jigaree/tracker
+        imagePullPolicy: "Always"
+        env:
+          - name: POD_NAME
+            valueFrom: 
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_NAMESPACE
+            valueFrom: 
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_NODE_NAME
+            valueFrom: 
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: NEXT_CALL
+            value: http://svc-2.run-tracker.svc.cluster.local:8000/trip/pod
+          - name: REDIS_SERVER_ADDRESS
+            value: redis-cart.run-tracker.svc.cluster.local:6379
+          # - name: MASTER_TRACKER
+          #   value: http://<FQDN>:8000//sync-trips
+        ports:
+          - name: http
+            containerPort: 8000
+        resources:
+          requests: 
+            cpu: 200m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+        readinessProbe:
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 1
+          httpGet:
+            path: /tracker-ui/
+            port: 8000
+      serviceAccountName: tracker-sa

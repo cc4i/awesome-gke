@@ -1,0 +1,26 @@
+
+namespace: run-tracker
+
+resources:
+  - ../../../base
+  - ../../../redis
+  - ../../../istio
+  - ../../../deploy/aws
+  - ../../../service
+
+patches:
+  - patch: |-
+      - op: replace
+        path: /spec/trafficPolicy/loadBalancer/localityLbSetting/distribute
+        value:
+          - from: ap-southeast-1/ap-southeast-1a/*
+            to:
+              "ap-southeast-1/ap-southeast-1a/*": 100
+          - from: ap-southeast-1/ap-southeast-1b/*
+            to:
+              "ap-southeast-1/ap-southeast-1b/*": 100
+          - from: ap-southeast-1/ap-southeast-1c/*
+            to:
+              "ap-southeast-1/ap-southeast-1c/*": 100
+    target:
+      kind: DestinationRule

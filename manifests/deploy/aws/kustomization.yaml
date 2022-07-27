@@ -1,0 +1,15 @@
+resources:
+  - deploy-svc-1-aws.yaml
+  - deploy-svc-2-aws.yaml
+  - deploy-svc-3-aws.yaml
+  - deploy-svc-4-aws.yaml
+
+replicas:
+  - name: tracker-svc-1
+    count: 3
+  - name: tracker-svc-2
+    count: 3
+  - name: tracker-svc-3
+    count: 3
+  - name: tracker-svc-4
+    count: 3
