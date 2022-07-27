@@ -284,10 +284,29 @@
         }
       // }
       
-    
+    }
+
+    function get_tracker(url) {
+
+      const xhr = new XMLHttpRequest()
+      console.log("url->", url)
+      xhr.open("GET", url, false)
+      xhr.setRequestHeader("Content-Type", "text/plain")
+      xhr.send()
+
+      // xhr.onload = function() {
+        if (xhr.status === 200) {
+          return JSON.parse(xhr.responseText)
+        } else {
+          console.log("get_tracker()->","No records found: " + this.status)
+          return {}
+        }
+      // }
+      
     }
 
 
+    var whereMap = new Map()
     async function call_initial(fnh) {
       
       let result = new Map()
@@ -297,7 +316,7 @@
         initUrl = "http://"+hosts[1]+"/initial/"+hosts[0]
         let data  =  post_tracker(initUrl);
         result.set(hosts[0], data)
-
+        whereMap.set(hosts[1], hosts[0])
       }
       console.log("call_initial()->", result)
       document.getElementById("mySavedModel").value = JSON.stringify(mapToObj(result),  undefined, 4)
@@ -357,7 +376,9 @@
 
     function call_trip() {
       const xhr = new XMLHttpRequest()
-      xhr.open("GET", document.getElementById("trackerUrl").value)
+      let trackerUrls = document.getElementById("trackerUrl").value.split("/")
+      let where=trackerUrls[2]
+      xhr.open("GET", "http://"+where+"/trip/"+whereMap.get(where))
       xhr.send()
 
       xhr.onload = function() {
@@ -414,28 +435,27 @@
 
     function history() {
       const xhr = new XMLHttpRequest()
-      trackerUrl = document.getElementById("trackerUrl").value
-      tUrls = trackerUrl.split("/")
-      console.log(tUrls)
-      hurl =  "http://"+tUrls[2]+"/all-trips"
-      console.log(hurl)
-      xhr.open("GET", hurl)
-      xhr.send()
+      let result = new Map()
+      addrs = document.getElementById("initialUrl").value.split(",")
+      for (let i = 0; i < addrs.length; i++) {
+        hosts = addrs[i].split("::")
+        allUrl = "http://"+hosts[1]+"/all-trips"
+        let data  =  get_tracker(allUrl);
+        result.set(hosts[0], data)
+      }
+      console.log("history()->", result)
+      document.getElementById("mySavedModel").value = JSON.stringify(mapToObj(result),  undefined, 4)
 
-      xhr.onload = function() {
-        if (xhr.status === 200) {
-          //parse JSON datax`x
-          data = JSON.parse(xhr.responseText)
-          console.log(data)
-          document.getElementById("mySavedModel").value = JSON.stringify(data,  undefined, 4)
-
+      result.forEach((mv, mk) => {
+        if (mv!=null) {
           model = myDiagram.model
           keys =[]
           for (let i=0; i<model.nodeDataArray.length; i++) {
             keys.push(model.nodeDataArray[i].key)
           }
-          for (let i=0; i<data.length; i++) {
-            tc = data[i]
+
+          for (let i=0; i<mv.length; i++) {
+            tc = mv[i]
         
             src = {
               "key": tc.source.ip,
@@ -464,14 +484,10 @@
             }
             model.linkDataArray.push(link)
           }
-          console.log(JSON.stringify(model,  undefined, 4))
           myDiagram.model = go.Model.fromJson(model)
-            ///
-
-        } else if (xhr.status === 404) {
-          console.log("No records found")
         }
-      }
+
+      })
     }
 
     function load_history() {
@@ -480,27 +496,20 @@
 
     function clear_history() {
       const xhr = new XMLHttpRequest()
-      trackerUrl = document.getElementById("trackerUrl").value
-      tUrls = trackerUrl.split("/")
-      console.log(tUrls)
-      hurl =  "http://"+tUrls[2]+"/clear-trips"
-      console.log(hurl)
-      xhr.open("GET", hurl)
-      xhr.send()
-
-      xhr.onload = function() {
-        if (xhr.status === 200) {
-          model = { 
-              "class": "go.GraphLinksModel",
-              "nodeDataArray": [], //{"key":"Client1", "text":"192.168.1.1", "color":"#F3F01E"},
-              "linkDataArray": [] //{"from":"Client1", "to":"svc-1-7dfdc5fdff-lg7d2", "width":20},
-            }
-          myDiagram.model = go.Model.fromJson(model)
-        } else if (xhr.status === 404) {
-          console.log("No records found")
-        }
+      addrs = document.getElementById("initialUrl").value.split(",")
+      for (let i = 0; i < addrs.length; i++) {
+        hosts = addrs[i].split("::")
+        clearUrl = "http://"+hosts[1]+"/clear-trips"
+        console.log("clear_history()->",clearUrl)
+        xhr.open("GET", clearUrl, false)
+        xhr.send()
       }
-
+      model = { 
+          "class": "go.GraphLinksModel",
+          "nodeDataArray": [], //{"key":"Client1", "text":"192.168.1.1", "color":"#F3F01E"},
+          "linkDataArray": [] //{"from":"Client1", "to":"svc-1-7dfdc5fdff-lg7d2", "width":20},
+        }
+      myDiagram.model = go.Model.fromJson(model)
     }
 
     window.addEventListener('DOMContentLoaded', init);
