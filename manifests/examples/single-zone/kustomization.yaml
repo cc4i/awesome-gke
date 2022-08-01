@@ -3,7 +3,7 @@ namespace: run-tracker
 
 images:
   - name: us-central1-docker.pkg.dev/play-with-anthos-340801/jigaree/tracker
-    newTag: 4d967a9-dirty
+    newTag: a32cbdc
 
 resources:
   - ../../base
