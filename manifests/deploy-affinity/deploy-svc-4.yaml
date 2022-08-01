@@ -32,6 +32,8 @@ spec:
             valueFrom: 
               fieldRef:
                 fieldPath: spec.nodeName
+          - name: REDIS_SERVER_ADDRESS
+            value: redis-cart.run-tracker.svc.cluster.local:6379
         ports:
           - name: http
             containerPort: 8000

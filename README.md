@@ -6,7 +6,8 @@ Create a place to help people better leveraging GKE & Anthos products in actions
 ### 1.1. [Place Pods into nodes in single zone with high availability](./docs/single-zone.md)
 > The cluster has multiple node pools for cross different zones, one zone for primary and one for standby. Using Affinity/Anti-affinity to place Pods into nodes in primary zone and shift to standby zone when there's zonal failure.
 
-### 1.2 Run boortrap scripts when launch the cluster 
+### 1.2 [Run boortrap scripts when launching nodes in GKE](./docs/startup-script.md)
+> To run bootstrap scripts for your nodes in GKE such as initialize something, add iptable entry, etc., you can run a quick DeamonSet to achieve that.
 
 ### 1.3 Using Cloud DNS instead of Kube DNS
 > Use much more reliable and robust option Cloud DNS (100% SLO) ot replace Kube DNS. Refernce from [blog](https://medium.com/google-cloud/dns-on-gke-everything-you-need-to-know-b961303f9153). 

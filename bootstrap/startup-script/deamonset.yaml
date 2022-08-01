@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: startup-script
+  labels:
+    app: startup-script
+spec:
+  selector:
+    matchLabels:
+      app: startup-script
+  template:
+    metadata:
+      labels:
+        app: startup-script
+    spec:
+      hostPID: true
+      containers:
+        - name: startup-script
+          image: startup-script
+          imagePullPolicy: Always
+          securityContext:
+            privileged: true
+          env:
+          - name: STARTUP_SCRIPT
+            value: |
+              #! /bin/bash
+
+              set -o errexit
+              set -o pipefail
+              set -o nounset
+
+              touch /tmp/foo
+              echo done

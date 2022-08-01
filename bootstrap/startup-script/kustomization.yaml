@@ -1,0 +1,31 @@
+
+namespace: default
+
+images:
+  - name: startup-script
+    newName: us-central1-docker.pkg.dev/play-with-anthos-340801/jigaree/startup-script
+    newTag: latest
+
+resources:
+  - deamonset.yaml
+
+patches:
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/env/0/value
+        value: |
+          # !!! Customize script here as per you want !!!
+          # BO:
+          #! /bin/bash
+
+          set -o errexit
+          set -o pipefail
+          set -o nounset
+
+          touch /tmp/foo
+          echo "Adding script here as per you want." > /tmp/foo
+          echo done  
+          # EO: 
+    target:
+      kind: DaemonSet
+      name: startup-script

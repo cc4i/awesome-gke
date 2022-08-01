@@ -34,6 +34,8 @@ spec:
                 fieldPath: spec.nodeName
           - name: NEXT_CALL
             value: http://svc-4:8000/trip/pod
+          - name: REDIS_SERVER_ADDRESS
+            value: redis-cart.run-tracker.svc.cluster.local:6379
         ports:
           - name: http
             containerPort: 8000
