@@ -19,8 +19,8 @@ func init() {
 	RedisServer = os.Getenv("REDIS_SERVER_ADDRESS")
 	RedisServerPassword = os.Getenv("REDIS_SERVER_PASSWORD")
 	if RedisServer == "" {
-		log.Fatal().Str("REDIS_SERVER_ADDRESS", RedisServer).
-			Msg("Failed to initail environments setting, pls configure & Reboot.")
+		log.Warn().Str("REDIS_SERVER_ADDRESS", RedisServer).
+			Msg("No value for REDIS_SERVER_ADDRESS, and set default 127.0.0.1:6379 as Redis server.")
 
 	} else {
 		RedisClient = redis.NewClient(&redis.Options{

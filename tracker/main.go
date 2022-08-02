@@ -20,12 +20,44 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// where Tracker is located to
+// where Tracker is deployed
 var whereami string
 
 // Get the URL for next call from env variable
 func getNextCall() string {
 	return os.Getenv("NEXT_CALL")
+}
+
+// API (/trip) - get TripDetail
+func goTrip(c *gin.Context) {
+	// Initial TripDetail with UUID
+	td := &trip.TripDetail{
+		Id: uuid.New().String(),
+	}
+	headers := make(map[string]string)
+
+	headers["x-pod-name"] = c.Request.Header.Get("x-pod-name")
+	headers["x-pod-namespace"] = c.Request.Header.Get("x-pod-namespace")
+	headers["x-node-name"] = c.Request.Header.Get("x-node-name")
+	headers["x-node-ip"] = c.Request.Header.Get("x-node-ip")
+	headers["x-zone"] = c.Request.Header.Get("x-zone")
+	headers["x-pod-ip"] = c.Request.Header.Get("x-pod-ip")
+	headers["x-request-start"] = c.Request.Header.Get("x-request-start")
+
+	// Get remote client IP if it's first call
+	clientIp := c.Request.Header.Get("x-pod-ip")
+	if clientIp == "" {
+		//TODO: Get external IP when call from inside Pod/? Call API?
+		clientIp = c.ClientIP()
+	}
+	whoami := c.Param("whoami")
+
+	if err := td.GoTrip(whoami, headers, clientIp, c.Request.Method, c.Request.RequestURI, getNextCall(), whereami); err != nil {
+		c.JSON(http.StatusInternalServerError, err)
+	} else {
+		c.JSON(http.StatusOK, td.Detail)
+	}
+
 }
 
 // API (/trip) - get TripDetail
@@ -146,12 +178,6 @@ func getInitialPods(c *gin.Context) {
 
 }
 
-// Test panic and reboot Pod
-func doPanic(c *gin.Context) {
-	log.Info().Str("exit_code", "255").Msg("Received panic request for demo")
-	os.Exit(255)
-}
-
 // Load all trips from storage
 func allTrips(c *gin.Context) {
 	// Initial TripDetail with UUID
@@ -174,11 +200,50 @@ func clearTrips(c *gin.Context) {
 	c.String(http.StatusOK, "Cleared")
 }
 
+// Test panic and reboot Pod
+func doPanic(c *gin.Context) {
+	log.Info().Str("exit_code", "255").Msg("Received panic request for demo")
+	os.Exit(255)
+}
+
+// Echo function for general usage and return stuff as per request methods
+func echo(c *gin.Context) {
+	if c.Request.Method == "GET" {
+		get := map[string]interface{}{
+			"url":     c.Request.RequestURI,
+			"method":  c.Request.Method,
+			"headers": c.Request.Header,
+			"queries": c.Request.URL.Query(),
+		}
+		c.JSON(http.StatusOK, get)
+	} else if c.Request.Method == "POST" {
+		buf, _ := ioutil.ReadAll(c.Request.Body)
+		post := map[string]interface{}{
+			"url":     c.Request.RequestURI,
+			"method":  c.Request.Method,
+			"headers": c.Request.Header,
+			"queries": string(buf),
+		}
+		c.JSON(http.StatusOK, post)
+	} else {
+		other := map[string]interface{}{
+			"url":     c.Request.RequestURI,
+			"method":  c.Request.Method,
+			"headers": c.Request.Header,
+		}
+		c.JSON(http.StatusOK, other)
+	}
+}
+
 func router(ctx context.Context, r *gin.Engine) *gin.Engine {
 	log.Info().Interface("ctx", ctx).Msg("context.Context pairs")
+	r.POST("/initial/:from", getInitialPods)
 	r.GET("/trip", startTrip)
 	r.GET("/trip/:whoami", startTrip)
-	r.POST("/initial/:from", getInitialPods)
+	r.GET("/v2/trip", goTrip)
+	r.GET("/v2/trip/:whoami", goTrip)
+	r.GET("/all-trips", allTrips)
+	r.GET("/clear-trips", clearTrips)
 
 	// ko add static assets under ./kodata - https://github.com/google/ko#static-assets
 	if staticDir := os.Getenv("KO_DATA_PATH"); staticDir != "" {
@@ -188,9 +253,9 @@ func router(ctx context.Context, r *gin.Engine) *gin.Engine {
 		r.Static("tracker-ui", "./kodata")
 	}
 
+	r.Any("/echo", echo)
 	r.GET("/panic", doPanic)
-	r.GET("/all-trips", allTrips)
-	r.GET("/clear-trips", clearTrips)
+
 	return r
 }
 

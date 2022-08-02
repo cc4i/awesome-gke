@@ -42,8 +42,9 @@ type Point struct {
 
 type TripInterface interface {
 	GetInitialPods(from string, ns string, prefixs []string) error
-	CallTrip(url string) error
+	CallTrip(kp *ks.Pod, url string) error
 	TripHistory() error
+	GoTrip(whoami string, headers map[string]string, clientIp string, reqMethod string, reqUri string, nextCall string, whereami string) error
 }
 
 func contains(s []string, str string) bool {
@@ -212,6 +213,92 @@ func (td *TripDetail) TripHistory() error {
 			var ttd []P2p
 			json.Unmarshal([]byte(val), &ttd)
 			td.Detail = append(td.Detail, ttd...)
+		}
+	}
+	return nil
+}
+
+// Go through trip chain/call one by one and return all data
+//
+// whoami - indicate for origal call or call from Pods
+// headers - all headers from HTTP request
+// clientIp - remote ip of client
+// reqMethod - request method of HTTP
+// reqUri - URL of http call
+// nextCall - URL of next http call
+// whereami - where the Tracker was deployed
+func (td *TripDetail) GoTrip(whoami string, headers map[string]string, clientIp string, reqMethod string, reqUri string, nextCall string, whereami string) error {
+
+	// Build source pod from headers if call from pod
+	srcPod := &ks.Pod{}
+	if whoami == "pod" {
+		srcPod.Name = headers["x-pod-name"]
+		srcPod.Namespace = headers["x-pod-namespace"]
+		srcPod.NodeName = headers["x-node-name"]
+		srcPod.NodeIp = headers["x-node-ip"]
+		srcPod.Zone = headers["x-zone"]
+		srcPod.PodIp = headers["x-pod-ip"]
+	}
+
+	if err := td.CallTrip(srcPod, nextCall); err != nil {
+		log.Error().Interface("err", err).Msg("tp.CallTrip")
+		return err
+	}
+	log.Info().Int("p2p_num", len(td.Detail)).Send()
+
+	//Get one-way trip latency: A->B / put time into header & calculate
+	start, _ := strconv.ParseInt(headers["x-request-start"], 10, 64)
+	end := time.Now().UnixNano() / int64(time.Millisecond)
+	// One time call and latency is 0
+	if headers["x-request-start"] == "" {
+		start = end
+	}
+
+	//Source
+	src := Point{
+		Ip: clientIp,
+	}
+	if whoami == "pod" {
+		src.Pod = srcPod
+	}
+
+	wp := Point{
+		Ip: whereami,
+	}
+	var swp Point
+	if headers["x-pod-ip"] == "" {
+		fp2p := P2p{
+			Number:      0,
+			Source:      src,
+			Destination: wp,
+		}
+		td.Detail = append(td.Detail, fp2p)
+		swp = wp
+	} else {
+		swp = src
+	}
+
+	//Destination
+	dstPod := &ks.Pod{}
+	p2p := P2p{
+		Number: len(td.Detail),
+		Source: swp,
+		Destination: Point{
+			Ip:  dstPod.GetLocalIP(),
+			Pod: dstPod.BuildPod(),
+		},
+		Method:     reqMethod,
+		RequestURI: reqUri,
+		Response:   dstPod.BuildResponse(),
+		Latency:    end - start,
+	}
+	td.Detail = append(td.Detail, p2p)
+	log.Info().Interface("return", td.Detail).Msg("startTrip()")
+	// Save to redis, only once
+	if whoami != "pod" {
+		buf, _ := json.Marshal(td.Detail)
+		if err := SaveTd2Redis(td.Id, buf); err != nil {
+			log.Error().Interface("error", err).Msg("fail to trip.SaveTd2Redis()")
 		}
 	}
 	return nil
