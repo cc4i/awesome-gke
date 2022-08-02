@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -16,12 +17,48 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
 // where Tracker is deployed
 var whereami string
+
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
+
+func simpleWs(c *gin.Context) {
+	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer ws.Close()
+	for {
+		//Read Message from client
+		mt, message, err := ws.ReadMessage()
+		if err != nil {
+			fmt.Println(err)
+			break
+		}
+		//If client message is ping will return pong
+		if string(message) == "ping" {
+			message = []byte("pong")
+		}
+		//Response message to client
+		err = ws.WriteMessage(mt, message)
+		if err != nil {
+			fmt.Println(err)
+			break
+		}
+	}
+}
 
 // Get the URL for next call from env variable
 func getNextCall() string {
@@ -254,6 +291,7 @@ func router(ctx context.Context, r *gin.Engine) *gin.Engine {
 	}
 
 	r.Any("/echo", echo)
+	r.GET("/ws", simpleWs)
 	r.GET("/panic", doPanic)
 
 	return r
