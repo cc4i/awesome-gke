@@ -7,3 +7,14 @@
 
 ```sh
 ```
+
+
+
+### References
+
+- Global load balance with hybrid connectivity - https://cloud.google.com/load-balancing/docs/https/setting-up-ext-global-https-hybrid
+
+
+### Networking
+
+![sample networking](./images/hybrid-ext-https-lb.svg)

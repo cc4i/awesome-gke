@@ -39,3 +39,9 @@ Create a place to help people better leveraging GKE & Anthos products in actions
 
 ### 4.4 Multi-cluster mesh outside Google Cloud
 > https://cloud.google.com/service-mesh/docs/unified-install/off-gcp-multi-cluster-setup
+
+## 5.Storage
+
+### 5.1 Using Google Cloud Storage  - https://github.com/GoogleCloudPlatform/gcsfuse
+### 5.2 Using Google Filestore - https://github.com/kubernetes-sigs/gcp-filestore-csi-driver
+### 5.3 Using Google Persisten Disk - https://github.com/kubernetes-sigs/gcp-compute-persistent-disk-csi-driver
