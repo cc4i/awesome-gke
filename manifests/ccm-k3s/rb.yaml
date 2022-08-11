@@ -1,0 +1,34 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    addon.kops.k8s.io/name: gcp-cloud-controller.addons.k8s.io
+    k8s-addon: gcp-cloud-controller.addons.k8s.io
+  name: cloud-controller-manager:apiserver-authentication-reader
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: extension-apiserver-authentication-reader
+subjects:
+- kind: ServiceAccount
+  name: cloud-controller-manager
+  namespace: kube-system
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    addon.kops.k8s.io/name: gcp-cloud-controller.addons.k8s.io
+    addonmanager.kubernetes.io/mode: Reconcile
+    k8s-addon: gcp-cloud-controller.addons.k8s.io
+  name: system:cloud-controller-manager
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:cloud-controller-manager
+subjects:
+- kind: ServiceAccount
+  name: cloud-controller-manager
+  namespace: kube-system
