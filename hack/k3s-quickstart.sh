@@ -46,13 +46,14 @@ then
     gcloud compute instance-templates create k3s-server-mig-template \
         --project=${PROJECT_ID} --machine-type=${INSTANCE_TYPE} \
         --network-interface=network=${NETWROK},network-tier=PREMIUM \
-        --metadata=enable-oslogin=true --maintenance-policy=MIGRATE \
+        --maintenance-policy=MIGRATE \
         --provisioning-model=STANDARD \
         --service-account=${SERVICE_ACCOUNT_ID}@${PROJECT_ID}.iam.gserviceaccount.com \
         --scopes=https://www.googleapis.com/auth/cloud-platform \
         --create-disk=auto-delete=yes,boot=yes,device-name=k3s-instance-mig-template,image=projects/debian-cloud/global/images/debian-11-bullseye-v20220719,mode=rw,size=50,type=pd-balanced \
         --no-shielded-secure-boot \
-        --shielded-vtpm --shielded-integrity-monitoring --reservation-affinity=any
+        --shielded-vtpm --shielded-integrity-monitoring --reservation-affinity=any \
+        --metadata=enable-oslogin=true
 fi
 
 
@@ -64,6 +65,11 @@ then
         --zone ${ZONE} \
         --template k3s-server-mig-template \
         --size 1
+    # Waiting for the managed instance group is ready
+    while [ $? != 0 ] 
+    do
+        gcloud compute instance-groups managed list-instances k3s-server-instance-group --zone ${ZONE} --format="json"
+    done
 fi
 
 k3s_server=`gcloud compute instance-groups managed list-instances k3s-server-instance-group --zone ${ZONE} --format="json" |jq -r ".[].instance"`
@@ -98,14 +104,14 @@ then
     gcloud compute instance-templates create k3s-agent-mig-template \
         --project=${PROJECT_ID} --machine-type=${INSTANCE_TYPE} \
         --network-interface=network=${NETWROK},network-tier=PREMIUM \
-        --metadata=enable-oslogin=true --maintenance-policy=MIGRATE \
+        --maintenance-policy=MIGRATE \
         --provisioning-model=STANDARD \
         --service-account=${SERVICE_ACCOUNT_ID}@${PROJECT_ID}.iam.gserviceaccount.com \
         --scopes=https://www.googleapis.com/auth/cloud-platform \
         --create-disk=auto-delete=yes,boot=yes,device-name=k3s-instance-mig-template,image=projects/debian-cloud/global/images/debian-11-bullseye-v20220719,mode=rw,size=50,type=pd-balanced \
         --no-shielded-secure-boot \
         --shielded-vtpm --shielded-integrity-monitoring --reservation-affinity=any \
-        --metadata=startup-script=${startup_script}
+        --metadata=startup-script=${startup_script},enable-oslogin=true
 fi
 
 # 5. Cerate agent group & register through startup-script
@@ -116,6 +122,11 @@ then
         --zone ${ZONE} \
         --template k3s-agent-mig-template \
         --size 2
+    # Waiting for the managed instance group is ready
+    while [ $? != 0 ] 
+    do
+        gcloud compute instance-groups managed list-instances k3s-agent-instance-group --zone ${ZONE} --format="json"
+    done
 fi
 
 

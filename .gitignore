@@ -65,3 +65,5 @@ app.*.map.json
 /cc-testing/
 /manifests/ns-rev.yaml
 /manifests/base/ns-rev.yaml
+/hack/k3s-r.yaml
+/hack/k3s.yaml
