@@ -50,3 +50,4 @@ Create a place to help people better leveraging GKE & Anthos products in actions
 
 ### 1. Infrastructure
 #### 1.1 Provision K3s on GCE with CCM
+K3s is a lightweight Kubernetes distributuion and packaged as a signle binary, is good for IoT, Edge compute, DevOps, customized k8s compute, etc. Just jump into [here](./blueprint/k3s/play-k3s.md) to know about better leveraging K3s on GCP.
