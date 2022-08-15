@@ -1,0 +1,28 @@
+# K3s on GCP
+
+## Provision K3s on GCE with Cloud Controller Manager (CCM)
+
+> Key points:
+> - Grant server & agent nodes with permission in order to provision network resources.
+> - Following guidance to build CCM and push into your own image registry.
+> - Configure RBAC and allow CCM working properly, see [reference](../../manifests/ccm-k3s/).
+
+> Steps
+> - Create service account with proper permissions.
+> - Create instance template for K3s server.
+> - Create managed instance group with server template.
+> - Install K3s server side.
+> - Create agent instances template for K3s agent.
+> - Cerate managed instance group with agent template.
+> - Taint server node.
+> - Deploy CCM for GCE into K3s cluster.
+
+<br>
+All-in-one example:
+
+```sh
+
+git clone https://github.com/cc4i/multi-k8s.git
+cd multi-k8s/hack && ./k3s-quickstart.sh
+
+```
