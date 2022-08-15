@@ -45,7 +45,7 @@ if [ $? != 0 ]
 then 
     gcloud compute instance-templates create k3s-server-mig-template \
         --project=${PROJECT_ID} --machine-type=${INSTANCE_TYPE} \
-        --network-interface=network=${NETWROK},network-tier=PREMIUM \
+        --network-interface=network=${NETWROK},network-tier=PREMIUM,address="" \
         --maintenance-policy=MIGRATE \
         --provisioning-model=STANDARD \
         --service-account=${SERVICE_ACCOUNT_ID}@${PROJECT_ID}.iam.gserviceaccount.com \
@@ -103,7 +103,7 @@ if [ $? != 0 ]
 then 
     gcloud compute instance-templates create k3s-agent-mig-template \
         --project=${PROJECT_ID} --machine-type=${INSTANCE_TYPE} \
-        --network-interface=network=${NETWROK},network-tier=PREMIUM \
+        --network-interface=network=${NETWROK},network-tier=PREMIUM,address="" \
         --maintenance-policy=MIGRATE \
         --provisioning-model=STANDARD \
         --service-account=${SERVICE_ACCOUNT_ID}@${PROJECT_ID}.iam.gserviceaccount.com \
