@@ -13,7 +13,7 @@ gcloud iam service-accounts delete ${SERVICE_ACCOUNT_ID}@${PROJECT_ID}.iam.gserv
 
 
 # Delete k3s server groups
-gcloud compute instance-templates deletek3s-server-instance-group --quiet
+gcloud compute instance-templates delete k3s-server-instance-group --quiet
 gcloud compute instance-groups managed delete k3s-server-instance-group --zone ${ZONE} --quiet
 
 
