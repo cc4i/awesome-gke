@@ -102,8 +102,10 @@ gcloud compute ssh ${k3s_server} --zone ${ZONE} -- "sudo cat /etc/rancher/k3s/k3
 
 # Inject cloud.config file for CCM
 cloud_config="[global]\nnode-tags = k3s-cluster-node\nmultizone = true\n"
-gcloud compute ssh ${k3s_server} --zone ${ZONE} -- "echo -e ${cloud_config}>./cloud.config;sudo mkdir /etc/kubernetes;sudo cp ./cloud.config /etc/kubernetes/cloud.config"
-gcloud compute ssh ${k3s_server} --zone ${ZONE} -- "cat ./cloud.config"
+echo -e ${cloud_config}>cloud.config
+gcloud compute scp --zone ${ZONE} ./cloud.config ${k3s_server}:~/
+gcloud compute ssh ${k3s_server} --zone ${ZONE} -- "sudo mkdir /etc/kubernetes;sudo cp ~/cloud.config /etc/kubernetes/cloud.config"
+gcloud compute ssh ${k3s_server} --zone ${ZONE} -- "sudo cat /etc/kubernetes/cloud.config"
 
 # 4. Create agent instances template 
 startup_script=$(cat << EOF
@@ -137,13 +139,21 @@ then
         --zone ${ZONE} \
         --template k3s-agent-mig-template \
         --size 2
-    # Waiting for the managed instance group is ready
+    # Waiting for the managed instances are ready
     while [ $? != 0 ] 
     do
         gcloud compute instance-groups managed list-instances k3s-agent-instance-group --zone ${ZONE} --format="json"
         sleep 5
     done
-    # gcloud compute instance-groups managed list-instances k3s-agent-instance-group --zone ${ZONE} --format="json"
+    for svr in $(gcloud compute instance-groups managed list-instances k3s-agent-instance-group --zone ${ZONE} --format="json"|jq -r ".[].instance"|awk -F"/" '{print $11}')
+    do
+        st=`gcloud compute instances describe ${svr} --zone ${ZONE} --format="json" |jq -r '.status'`
+        while [ "${st}" != "RUNNING" ]
+        do
+            sleep 10
+            st=`gcloud compute instances describe ${svr} --zone ${ZONE} --format="json" |jq -r '.status'`
+        done
+    done
 fi
 
 

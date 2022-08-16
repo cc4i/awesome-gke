@@ -67,3 +67,4 @@ app.*.map.json
 /manifests/base/ns-rev.yaml
 /hack/k3s-r.yaml
 /hack/k3s.yaml
+/hack/cloud.config
