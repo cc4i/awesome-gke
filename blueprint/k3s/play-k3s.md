@@ -4,6 +4,7 @@
 
 > Key points:
 > - Grant server & agent nodes with permission in order to provision network resources.
+> - Allow port:60000 in the firewall rules.
 > - Following guidance to build CCM and push into your own image registry.
 > - Configure RBAC and allow CCM working properly, see [reference](../../manifests/ccm-k3s/).
 
@@ -18,11 +19,18 @@
 > - Deploy CCM for GCE into K3s cluster.
 
 <br>
-All-in-one example:
+
+## All-in-one example
 
 ```sh
 
 git clone https://github.com/cc4i/multi-k8s.git
 cd multi-k8s/hack && ./k3s-quickstart.sh
 
+```
+
+## Clean up
+
+```sh
+cd multi-k8s/hack && ./k3s-quickstart-cleanup.sh
 ```
