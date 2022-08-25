@@ -1,0 +1,25 @@
+site_name: Kubernetes on Google Cloud
+site_url: https://github.com/cc4i/multi-k8s/
+nav:
+  - Home: index.md
+  - 'General':
+    - 'Preparing GKE cluster for PRODUCTION': general/prepare-gke.md
+  
+  - 'Networking':
+    - 'Deploy workload into single zone with high availability': networking/single-zone.md
+    - 'Reduce inter-zone traffic with Anthhos Service Mesh': networking/asm-locality.md
+    - 'Hybrid connectivity with services on AWS EKS': networking/glb-locality.md
+
+  - 'Security':
+    - 'Acccessing AWS services from GKE through workload identity': security/workload-idetity.md
+
+  - 'Solutions':
+    - 'K3s integrate Google Cloud Provider on GCE': solutions/play-k3s.md
+  
+  - 'Workaround':
+    - 'Run a boortrap script when launching nodes in GKE': workaround/startup-script.md
+
+  - About:
+    - 'License': 'license.md'
+    - 'Release Notes': 'release-notes.md'
+theme: readthedocs

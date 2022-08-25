@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://github.com/cc4i/multi-k8s/networking/asm-locality/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Reduce inter-zone traffic with Anthhos Service Mesh - Kubernetes on Google Cloud</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Reduce inter-zone traffic with Anthhos Service Mesh";
+        var mkdocs_page_input_path = "networking/asm-locality.md";
+        var mkdocs_page_url = "/cc4i/multi-k8s/networking/asm-locality/";
+      </script>
+    
+    <script src="../../js/jquery-3.6.0.min.js" defer></script>
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+      <script>hljs.initHighlightingOnLoad();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Kubernetes on Google Cloud
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">General</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../general/prepare-gke/">Preparing GKE cluster for PRODUCTION</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Networking</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../single-zone/">Deploy workload into single zone with high availability</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="./">Reduce inter-zone traffic with Anthhos Service Mesh</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#description">Description</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#deplyment">Deplyment</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#usage">Usage</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#notes">Notes</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../glb-locality/">Hybrid connectivity with services on AWS EKS</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Security</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../security/workload-idetity/">Acccessing AWS services from GKE through workload identity</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Solutions</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../solutions/play-k3s/">K3s integrate Google Cloud Provider on GCE</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Workaround</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../workaround/startup-script/">Run a boortrap script when launching nodes in GKE</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">About</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="" href="../../license.md">License</a>
+                  </li>
+                  <li class="toctree-l1"><a class="" href="../../release-notes.md">Release Notes</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Kubernetes on Google Cloud</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" alt="Docs"></a> &raquo;</li>
+          <li>Networking &raquo;</li>
+      <li>Reduce inter-zone traffic with Anthhos Service Mesh</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="_1"></h1>
+<h2 id="description">Description</h2>
+<p>Visualize pods across the nodes in different zones to supports highly available and scalable, as well as leverage weight distrubution of Istio to reduce inter-zone traffic &amp; cost.</p>
+<h2 id="deplyment">Deplyment</h2>
+<pre><code class="language-sh"># Clone repo
+git clone https://github.com/cc4i/multi-k8s.git
+cd multi-k8s
+cd hack &amp;&amp; ./gke.sh
+
+# Provision &amp; deployment
+skaffold build 
+tag=`skaffold build --dry-run --output='{{json .}}' --quiet |jq '.builds[].tag' -r`
+skaffold deploy --images ${tag}
+
+# Apply locality setting
+kubectl apply -f manifests/istio -n run-tracker
+
+# Run
+endpoint=`kubectl get svc/istio-ingressgateway -n run-tracker -o &quot;jsonpath={.status.loadBalancer.ingress[0].ip}&quot;`
+curl -v http://${endpoint}/trip |jq
+
+</code></pre>
+<h2 id="usage">Usage</h2>
+<p>The UI to understand accessing map.
+<img alt="image info" src="../../images/tracker-ui.png" /></p>
+<pre><code class="language-sh">endpoint=`kubectl get svc/istio-ingressgateway -n run-tracker -o &quot;jsonpath={.status.loadBalancer.ingress[0].ip}&quot;`
+
+# Access by http://${endpoint}/tracker-ui
+open http://${endpoint}/tracker-ui
+
+</code></pre>
+<h2 id="notes">Notes</h2>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../single-zone/" class="btn btn-neutral float-left" title="Deploy workload into single zone with high availability"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../glb-locality/" class="btn btn-neutral float-right" title="Hybrid connectivity with services on AWS EKS">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../single-zone/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../glb-locality/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script>var base_url = '../..';</script>
+    <script src="../../js/theme_extra.js" defer></script>
+    <script src="../../js/theme.js" defer></script>
+      <script src="../../search/main.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        };
+    </script>
+
+</body>
+</html>

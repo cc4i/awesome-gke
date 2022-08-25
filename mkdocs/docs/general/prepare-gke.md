@@ -1,4 +1,4 @@
-# End to End Blueprint with GKE
+# Preparing GKE Cluster for Production
 
 1. Code repo
 2. GitOps & CI/CD

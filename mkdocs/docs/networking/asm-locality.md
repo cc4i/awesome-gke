@@ -1,8 +1,9 @@
-## Anthos Service Mesh (ASM) + Locality Setting 
+#
 
-> Visualize pods across the nodes in different zones to supports highly available and scalable, as well as leverage weight distrubution of Istio to reduce inter-zone traffic & cost.
+## Description
+Visualize pods across the nodes in different zones to supports highly available and scalable, as well as leverage weight distrubution of Istio to reduce inter-zone traffic & cost.
 
-### Instruction
+## Deplyment
 
 ```sh
 # Clone repo
@@ -23,9 +24,9 @@ endpoint=`kubectl get svc/istio-ingressgateway -n run-tracker -o "jsonpath={.sta
 curl -v http://${endpoint}/trip |jq
 
 ```
-### Tracking UI
+## Usage
 The UI to understand accessing map.
-![image info](./images/tracker-ui.png)
+![image info](../images/tracker-ui.png)
 
 ```sh
 endpoint=`kubectl get svc/istio-ingressgateway -n run-tracker -o "jsonpath={.status.loadBalancer.ingress[0].ip}"`
@@ -34,3 +35,5 @@ endpoint=`kubectl get svc/istio-ingressgateway -n run-tracker -o "jsonpath={.sta
 open http://${endpoint}/tracker-ui
 
 ```
+
+## Notes

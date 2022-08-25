@@ -1,4 +1,4 @@
-<img src="./docs/images/skipper.png" alt="multi-k8s" width="200"/>
+<img src="./images/skipper.png" alt="multi-k8s" width="200"/>
 
 
 

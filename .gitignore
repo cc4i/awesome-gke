@@ -68,3 +68,5 @@ app.*.map.json
 /hack/k3s-r.yaml
 /hack/k3s.yaml
 /hack/cloud.config
+
+/docs/site/
