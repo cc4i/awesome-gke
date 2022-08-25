@@ -1,4 +1,4 @@
-<img src="./docs/images/skipper.png" alt="multi-k8s" width="200"/>
+<img src="./mkdocs/docs/images/skipper.png" alt="multi-k8s" width="200"/>
 
 
 
@@ -20,6 +20,8 @@ Will include advanced topics in the future:
 - Multi/Hybrid Clusters
 - Solutions on GKE
 - Workaround for something 
+
+>[Live docs](https://cc4i.github.io/multi-k8s/)
 
 ## Contributing
 
