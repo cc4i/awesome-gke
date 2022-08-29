@@ -20,6 +20,6 @@ nav:
     - 'Run a boortrap script when launching nodes in GKE': workaround/startup-script.md
 
   - About:
-    - 'License': 'license.md'
+    - 'License': '../LICENSE'
     - 'Release Notes': 'release-notes.md'
 theme: readthedocs
