@@ -4,10 +4,9 @@
 
 ```sh
 
-
 # Clone repo
 git clone https://github.com/cc4i/multi-k8s.git
-cd bootstrap/startup-script
+cd asset/startup-script
 
 # build image & push into registry
 docker build . -t <image url>:<tag>
@@ -16,7 +15,7 @@ docker push <image url>:<tag>
 # Modify script as per request betweend "# BO:" and "# EO:"
 
 # Deploy to cluster
-kustomize build . | kubectl apply -f -
+kustomize build ./manifests | kubectl apply -f -
 
 ```
 

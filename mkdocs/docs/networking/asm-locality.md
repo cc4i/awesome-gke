@@ -9,7 +9,7 @@ Visualize pods across the nodes in different zones to supports highly available 
 # Clone repo
 git clone https://github.com/cc4i/multi-k8s.git
 cd multi-k8s
-cd hack && ./gke.sh
+cd asset/tod/bin && ./gke.sh
 
 # Provision & deployment
 skaffold build 
