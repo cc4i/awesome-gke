@@ -24,10 +24,8 @@
 The k3s cluster uses managed instance group for both server and agent nodes for high available purpose, but no auto scaling capability, no external database.
 
 ```sh
-
 git clone https://github.com/cc4i/multi-k8s.git
-cd multi-k8s/hack && ./k3s-quickstart.sh
-
+cd multi-k8s/asset/k3s/bin && ./k3s-quickstart.sh
 ```
 
 ## High-Availability and auto-scalability K3s Cluster
@@ -35,13 +33,12 @@ The K3s cluster leverages managed instance group for both server and agent nodes
 
 
 ```sh
+cd multi-k8s/asset/k3s/bin && ./k3s-ha.sh
 ```
 
 
 ## Clean up
 
 ```sh
-
 cd multi-k8s/hack && ./k3s-quickstart-cleanup.sh
-
 ```

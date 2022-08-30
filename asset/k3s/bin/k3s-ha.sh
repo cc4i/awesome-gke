@@ -6,7 +6,7 @@ export PROJECT_ID=play-with-anthos-340801
 export PROJECT_NUMBER=`gcloud projects list --filter PROJECT_ID=${PROJECT_ID} --format "value(PROJECT_NUMBER)"`
 export SERVER_INSTANCE_TYPE=e2-medium
 export AGENT_INSTANCE_TYPE=e2-medium
-export NETWROK=default
+export NETWROK=custom-vpc-1
 export REGION=asia-southeast1
 export ZONE=asia-southeast1-b
 export ZONE_1=asia-southeast1-b
@@ -14,7 +14,7 @@ export ZONE_2=asia-southeast1-c
 
 
 
-# 0. Create SA with proper roles
+# 0.1. Create SA with proper roles
 gcloud iam service-accounts describe ${SERVICE_ACCOUNT_ID}@${PROJECT_ID}.iam.gserviceaccount.com
 if [ $? != 0 ]
 then
@@ -43,7 +43,38 @@ then
 
 fi
 
+# 0.2 Create custome VPC and reserve ip range for PostgresQL instances
+# vpc
+# reserve IP range, example name: asia-southeast1-k3s-pg
+# Create Private connection to Services
 
+# 0.3. Provision Cloud PosgesQL -> gcloud services enable sqladmin.googleapis.com ::
+#   Reference ::
+#       - https://cloud.google.com/sql/docs/postgres/create-instance#create-2nd-gen
+#       - https://medium.com/google-cloud/secure-google-cloud-sql-instances-using-private-ip-gotchas-troubleshooting-f7cf6dfe1bbb (step by step)
+#       - https://cloud.google.com/sql/docs/postgres/configure-private-services-access
+#       - https://cloud.google.com/sql/docs/postgres/connect-compute-engine
+gcloud beta sql instances create k3s-store-db-dxyqi \
+    --region=${REGION} \
+    --database-version=POSTGRES_11 \
+    --cpu=2 \
+    --memory=7680MB \
+    --network=projects/${PROJECT_ID}/global/networks/${NETWROK} \
+    --allocated-ip-range-name=asia-southeast1-k3s-pg \
+    --no-assign-ip
+
+# Default - postgres
+gcloud beta sql users set-password postgres \
+    --instance=k3s-store-db-dxyqi \
+    --password="5aI79JWYKAvJ"
+db_instance_ip=`gcloud beta sql instances describe k3s-store-db-dxyqi --format json |jq -r '.ipAddresses[].ipAddress'`
+db_endpoint="postgres://postgres:5aI79JWYKAvJ@${db_instance_ip}:5432/"
+
+# 0.4 Reserve static IP for LB
+gcloud compute addresses create k3s-server-lb-ipv4 \
+    --region ${REGION}
+k3s_server_external_ip=`gcloud compute addresses describe k3s-server-lb-ipv4 --region ${REGION} --format json|jq -r '.address'`
+echo "Fixed K3s server IP -> ${k3s_server_external_ip}"
 
 # K3s server :: 
 #   references :: 
@@ -51,6 +82,12 @@ fi
 #       - https://cloud.google.com/load-balancing/docs/network/setting-up-network-backend-service
 
 # 1. Create instance tempale + starup script
+server_startup_script=$(cat << EOF
+#! /bin/bash
+sudo curl -sfL https://get.k3s.io | sh -s - server --disable servicelb --disable-cloud-controller --https-listen-port 443 --tls-san ${k3s_server_external_ip} --datastore-endpoint=${db_endpoint}
+EOF
+)
+
 gcloud compute instance-templates describe k3s-server-mig-template
 if [ $? != 0 ]
 then 
@@ -65,7 +102,7 @@ then
         --create-disk=auto-delete=yes,boot=yes,device-name=k3s-instance-mig-template,image=projects/debian-cloud/global/images/debian-11-bullseye-v20220719,mode=rw,size=50,type=pd-balanced \
         --no-shielded-secure-boot \
         --shielded-vtpm --shielded-integrity-monitoring --reservation-affinity=any \
-        --metadata=enable-oslogin=true
+        --metadata=startup-script="${server_startup_script}",enable-oslogin=true
 fi
 
 # 2. Create managed instance group with instance template for server
@@ -88,9 +125,8 @@ then
         sleep 5
     done
 fi
-
 k3s_server=`gcloud compute instance-groups managed list-instances k3s-server-instance-group --zone ${ZONE} --format="json" |jq -r ".[].instance"|awk -F"/" '{print $11}'`
-echo "${k3s_server} is ready to provision K3s."
+echo "Initial K3s server -> ${k3s_server} is ready."
 
 # 3. Create firewall rules for ILB
 gcloud compute firewall-rules create k3s-fw-allow-lb-access \
@@ -114,29 +150,26 @@ gcloud compute firewall-rules create k3s-fw-allow-health-check \
     --rules=tcp,udp,icmp
 
 # 4. Create ILB and register MIG with LB
-# 4.1 Reserve static IP for LB
-gcloud compute addresses create k3s-server-lb-ipv4 \
-    --region ${REGION}
-# 4.2 Create health check to K3s servers for LB
+# 4.1 Create health check to K3s servers for LB
 gcloud compute health-checks create https k3s-server-health-check  \
     --check-interval=10s \
     --port=443 \
     --timeout=5s \
     --unhealthy-threshold=3
-# 4.3 Create backend service
+# 4.2 Create backend service
 gcloud compute backend-services create k3s-server-lb-backend-service \
     --protocol TCP \
     --health-checks k3s-server-health-check \
     --health-checks-region ${REGION} \
     --region ${REGION}
 
-# 4.4 Add MIG to backecn service 
+# 4.3 Add MIG to backecn service 
 gcloud compute backend-services add-backend k3s-server-lb-backend-service \
     --instance-group k3s-server-instance-group \
     --instance-group-zone ${ZONE} \
     --region ${REGION}
 
-# 4.5 Create firewall rule to handle IPv4 traffic 
+# 4.4 Create firewall rule to handle IPv4 traffic 
 gcloud compute forwarding-rules create network-lb-forwarding-rule-ipv4 \
   --load-balancing-scheme EXTERNAL \
   --region ${REGION} \
@@ -144,104 +177,26 @@ gcloud compute forwarding-rules create network-lb-forwarding-rule-ipv4 \
   --address k3s-server-lb-ipv4 \
   --backend-service k3s-server-lb-backend-service
 
-# 5. Checking
-# 6. Provision Cloud PosgesQL -> gcloud services enable sqladmin.googleapis.com
-#   Reference:
-#       - https://cloud.google.com/sql/docs/postgres/create-instance#create-2nd-gen
-gcloud sql instances create k3s-store-db \
-    --database-version=POSTGRES_11 \
-    --cpu=2 \
-    --memory=7680MB \
-    --region=${REGION} \
-    --network ${NETWROK} \
-    --no-assign-ip \
-    --authorized-networks=10.0.0.0/8
 
-gcloud sql users set-password postgres \
-    --instance=k3s-store-db \
-    --password="5aI79JWYKAvJ"
-# 6. Install K3s server
-
-# K3s agent
-# 
+# 5. Retrieve node toke from K3s server
+# References ::
+#       - https://rancher.com/docs/k3s/latest/en/
+#       - https://rancher.com/docs/k3s/latest/en/installation/ha/
+k3s_node_token=`gcloud compute ssh ${k3s_server} --zone ${ZONE} -- "sudo cat /var/lib/rancher/k3s/server/node-token|tr -d '\n'"`
 
 
-
-
-
-
-# 1. Create instance template for server
-gcloud compute instance-templates describe k3s-server-mig-template
-if [ $? != 0 ]
-then 
-    gcloud compute instance-templates create k3s-server-mig-template \
-        --project=${PROJECT_ID} --machine-type=${INSTANCE_TYPE} \
-        --network-interface=network=${NETWROK},network-tier=PREMIUM,address="" \
-        --tags=http-server,https-server \
-        --maintenance-policy=MIGRATE \
-        --provisioning-model=STANDARD \
-        --service-account=${SERVICE_ACCOUNT_ID}@${PROJECT_ID}.iam.gserviceaccount.com \
-        --scopes=https://www.googleapis.com/auth/cloud-platform \
-        --create-disk=auto-delete=yes,boot=yes,device-name=k3s-instance-mig-template,image=projects/debian-cloud/global/images/debian-11-bullseye-v20220719,mode=rw,size=50,type=pd-balanced \
-        --no-shielded-secure-boot \
-        --shielded-vtpm --shielded-integrity-monitoring --reservation-affinity=any \
-        --metadata=enable-oslogin=true
-fi
-
-
-# 2. Create MIG for server group
-gcloud compute instance-groups describe k3s-server-instance-group --zone ${ZONE}
-if [ $? != 0 ]
-then
-    gcloud compute instance-groups managed create k3s-server-instance-group \
-        --zone ${ZONE} \
-        --template k3s-server-mig-template \
-        --size 1
-    # Waiting for the managed instance group is ready
-    while [ $? != 0 ] 
-    do
-        gcloud compute instance-groups managed list-instances k3s-server-instance-group --zone ${ZONE} --format="json"
-    done
-    k3s_server_status=""
-    while [ "${k3s_server_status}" != "RUNNING" ]
-    do
-        k3s_server_status=`gcloud compute instance-groups managed list-instances k3s-server-instance-group --zone ${ZONE} --format="json"|jq -r ".[].instanceStatus"`
-        sleep 5
-    done
-fi
-
-k3s_server=`gcloud compute instance-groups managed list-instances k3s-server-instance-group --zone ${ZONE} --format="json" |jq -r ".[].instance"|awk -F"/" '{print $11}'`
-echo "${k3s_server} is ready to provision K3s."
-
-# 3. Install K3s server
-# Retrieve values of key variables
-k3s_server_ip=`gcloud compute instances describe ${k3s_server}  --zone ${ZONE} --format="json" |jq -r ".networkInterfaces[].networkIP"`
-k3s_server_external_ip=`gcloud compute instances describe ${k3s_server}  --zone ${ZONE} --format="json" |jq -r ".networkInterfaces[].accessConfigs[].natIP"`
-echo "K3s Server: ${k3s_server} -> ${k3s_server_ip}/${k3s_server_external_ip}"
-
-gcloud compute ssh ${k3s_server} --zone ${ZONE} -- "sudo ls -l /var/lib/rancher/k3s/server/node-token"
-if [ $? != 0 ]
-then
-    gcloud compute ssh ${k3s_server} --zone ${ZONE} -- "sudo curl -sfL https://get.k3s.io | sh -s - server --disable servicelb --disable-cloud-controller --https-listen-port 443 --tls-san ${k3s_server_external_ip}"
-    sleep 10
-fi
-k3s_server_token=`gcloud compute ssh ${k3s_server} --zone ${ZONE} -- "sudo cat /var/lib/rancher/k3s/server/node-token|tr -d '\n'"`
-
-
-# Retrieve k3s.yaml for kubectl
-gcloud compute ssh ${k3s_server} --zone ${ZONE} -- "sudo cat /etc/rancher/k3s/k3s.yaml">k3s.yaml
-
-# Inject cloud.config file for CCM
+# Injecting cloud.config file for CCM
 cloud_config="[global]\nnode-tags = k3s-cluster-node\nmultizone = true\n"
 echo -e ${cloud_config}>cloud.config
 gcloud compute scp --zone ${ZONE} ./cloud.config ${k3s_server}:~/
 gcloud compute ssh ${k3s_server} --zone ${ZONE} -- "sudo mkdir /etc/kubernetes;sudo cp ~/cloud.config /etc/kubernetes/cloud.config"
 gcloud compute ssh ${k3s_server} --zone ${ZONE} -- "sudo cat /etc/kubernetes/cloud.config"
 
-# 4. Create agent instances template 
+# K3s agent ::
+# 6. Create agent instances template 
 startup_script=$(cat << EOF
 #! /bin/bash
-curl -sfL https://get.k3s.io | K3S_URL="https://${k3s_server_ip}:443" K3S_TOKEN="${k3s_server_token}" sh -
+curl -sfL https://get.k3s.io | K3S_URL="https://${k3s_server_ip}:443" K3S_TOKEN="${k3s_node_token}" sh -
 EOF
 )
 
@@ -262,7 +217,7 @@ then
         --metadata=startup-script="${startup_script}",enable-oslogin=true
 fi
 
-# 5. Cerate agent group & register through startup-script
+# 7. Cerate agent group & register through startup-script
 gcloud compute instance-groups describe k3s-agent-instance-group --zone ${ZONE}
 if [ $? != 0 ]
 then
@@ -288,7 +243,9 @@ then
 fi
 
 
-# 6. Taint server node
+# 8. Taint server node
+# Retrieve k3s.yaml for kubectl
+gcloud compute ssh ${k3s_server} --zone ${ZONE} -- "sudo cat /etc/rancher/k3s/k3s.yaml">k3s.yaml
 sed -e 's/127.0.0.1/'${k3s_server_external_ip}'/g' k3s.yaml > k3s-r.yaml
 kubectl --kubeconfig=k3s-r.yaml  get nodes
 
@@ -296,10 +253,11 @@ kubectl --kubeconfig=k3s-r.yaml taint nodes ${k3s_server} node-role.kubernetes.i
 kubectl --kubeconfig=k3s-r.yaml get pods -n kube-system
 
 
-# 7. Deploy CCM for GCE into K3s cluster
+# 9. Deploy CCM for GCE into K3s cluster
 # kubectl --kubeconfig=k3s-r.yaml apply -f ../manifests/ccm-k3s/extension-apiserver-authentication.yaml
 kubectl --kubeconfig=k3s-r.yaml apply -f ../manifests/ccm-k3s/role.yaml
 kubectl --kubeconfig=k3s-r.yaml apply -f ../manifests/ccm-k3s/sa.yaml
 kubectl --kubeconfig=k3s-r.yaml apply -f ../manifests/ccm-k3s/rb.yaml
 kubectl --kubeconfig=k3s-r.yaml apply -f ../manifests/ccm-k3s/gce.yaml
 kubectl --kubeconfig=k3s-r.yaml get pods -n kube-system
+
