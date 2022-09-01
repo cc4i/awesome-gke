@@ -23,4 +23,5 @@ nav:
   - About:
     - 'License': '../LICENSE'
     - 'Release Notes': 'release-notes.md'
-theme: readthedocs
+theme: 
+  name: material
