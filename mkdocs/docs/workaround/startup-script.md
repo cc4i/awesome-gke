@@ -1,7 +1,7 @@
 #
 
 ## Description
-In GKE (Standard) you can't run customized startup script due to not support customized host operation system (OS), fortunately we can use DaemonSet to address this issue. The following example tried to demostrate how to run a startup script through DeamonSet, you can build you own as the reference here.
+In GKE Standard you can't run customized startup script when booting up a node due to not support customized host operation system (OS), fortunately we can use DaemonSet to address this issue. The following example tried to demostrate how to run a startup script through DeamonSet, you can build you own as the reference here.
 
 ## Deployment
 

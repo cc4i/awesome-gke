@@ -26,3 +26,6 @@ Will include advanced topics in the future:
 ## Contributing
 
 Encourage you to contribute to this repo if you have implemented a practice that has proven to solve something, just open an issue or a pull request to share with us, please.
+
+## Notes
+Starring the repo if you feel helpful, that's the big motivation and thanks.

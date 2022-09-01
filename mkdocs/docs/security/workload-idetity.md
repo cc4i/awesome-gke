@@ -108,4 +108,4 @@ aws sts get-caller-identity
 
 
 ## References
-- https://github.com/doitintl/gtoken
+- [https://github.com/doitintl/gtoken](https://github.com/doitintl/gtoken)
