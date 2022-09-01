@@ -82,9 +82,23 @@ echo "Fixed K3s server IP -> ${k3s_server_external_ip}"
 #       - https://cloud.google.com/load-balancing/docs/network/setting-up-network-backend-service
 
 # 1. Create instance tempale + starup script
+# Notes: 
+#   - Install script was broken and changed to manaual mode: https://github.com/k3s-io/k3s/issues/6052
+server_token="32a0f2a51ae34d898662556cc8aba125"
 server_startup_script=$(cat << EOF
 #! /bin/bash
-sudo curl -sfL https://get.k3s.io | sh -s - server --disable servicelb --disable-cloud-controller --https-listen-port 443 --tls-san ${k3s_server_external_ip} --datastore-endpoint=${db_endpoint}
+curl -sfL https://github.com/k3s-io/k3s/releases/download/v1.24.4%2Bk3s1/k3s > /usr/local/bin/k3s
+chmod +x /usr/local/bin/k3s
+ln -sf /usr/local/bin/k3s /usr/local/bin/kubectl
+ln -sf /usr/local/bin/k3s /usr/local/bin/crictl
+ln -sf /usr/local/bin/k3s /usr/local/bin/ctr
+k3s server \
+    --disable=servicelb \
+    --disable-cloud-controller \
+    --https-listen-port=443 \
+    --token=${server_token} \
+    --tls-san=${k3s_server_external_ip} \
+    --datastore-endpoint=${db_endpoint} &
 EOF
 )
 
@@ -92,8 +106,9 @@ gcloud compute instance-templates describe k3s-server-mig-template
 if [ $? != 0 ]
 then 
     gcloud compute instance-templates create k3s-server-mig-template \
-        --project=${PROJECT_ID} --machine-type=${INSTANCE_TYPE} \
-        --network-interface=network=${NETWROK},network-tier=PREMIUM,address="" \
+        --region ${REGION} \
+        --machine-type=${SERVER_INSTANCE_TYPE} \
+        --network-interface=network=${NETWROK},subnet=${REGION},network-tier=PREMIUM,address="" \
         --tags=http-server,https-server \
         --maintenance-policy=MIGRATE \
         --provisioning-model=STANDARD \
@@ -196,7 +211,14 @@ gcloud compute ssh ${k3s_server} --zone ${ZONE} -- "sudo cat /etc/kubernetes/clo
 # 6. Create agent instances template 
 startup_script=$(cat << EOF
 #! /bin/bash
-curl -sfL https://get.k3s.io | K3S_URL="https://${k3s_server_ip}:443" K3S_TOKEN="${k3s_node_token}" sh -
+curl -sfL https://github.com/k3s-io/k3s/releases/download/v1.24.4%2Bk3s1/k3s > /usr/local/bin/k3s
+chmod +x /usr/local/bin/k3s
+ln -sf /usr/local/bin/k3s /usr/local/bin/kubectl
+ln -sf /usr/local/bin/k3s /usr/local/bin/crictl
+ln -sf /usr/local/bin/k3s /usr/local/bin/ctr
+k3s agent \
+    --server https://${k3s_server_ip}:443 \
+    --token ${k3s_node_token} &
 EOF
 )
 
@@ -204,8 +226,9 @@ gcloud compute instance-templates describe k3s-agent-mig-template
 if [ $? != 0 ]
 then 
     gcloud compute instance-templates create k3s-agent-mig-template \
-        --project=${PROJECT_ID} --machine-type=${INSTANCE_TYPE} \
-        --network-interface=network=${NETWROK},network-tier=PREMIUM,address="" \
+        --region ${REGION} \
+        --machine-type=${AGENT_INSTANCE_TYPE} \
+        --network-interface=network=${NETWROK},subnet=${REGION},network-tier=PREMIUM,address="" \
         --tags=http-server,https-server \
         --maintenance-policy=MIGRATE \
         --provisioning-model=STANDARD \
