@@ -44,21 +44,21 @@ cd multi-k8s/asset/k3s/bin && ./k3s-ha.sh
 
 
 ## Integrate with Cloud Controller Manager (CCM) for GCE
-> **Keys**
-> - Grant server & agent nodes with permission in order to provision network resources.
-> - Allow port:60000 in the firewall rules.
-> - Following guidance to build Cloud Controller Manager (CCM) and push into your own image registry.
-> - Configure RBAC and allow CCM working properly, see [reference](../../../asset/k3s/manifests/).
+**Keys**
+- Grant server & agent nodes with permission in order to provision network resources.
+- Allow port:60000 in the firewall rules.
+- Following guidance to build Cloud Controller Manager (CCM) and push into your own image registry.
+- Configure RBAC and allow CCM working properly, see [reference](../../../asset/k3s/manifests/).
 
-> **Steps**
-> - Create service account with proper permissions.
-> - Create instance template for K3s server.
-> - Create managed instance group with server template.
-> - Install K3s server side.
-> - Create agent instances template for K3s agent.
-> - Cerate managed instance group with agent template.
-> - Taint server node.
-> - Deploy CCM for GCE into K3s cluster.
+**Steps**
+- Create service account with proper permissions.
+- Create instance template for K3s server.
+- Create managed instance group with server template.
+- Install K3s server side.
+- Create agent instances template for K3s agent.
+- Cerate managed instance group with agent template.
+- Taint server node.
+- Deploy CCM for GCE into K3s cluster.
 
 
 ## Clean up
