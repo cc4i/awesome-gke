@@ -41,7 +41,7 @@ kubectl config rename-context gke_${PROJECT_ID}_${REGION}_${GKE_CLUSTER_ISTIO} $
 # 2.Install ASM/Istio from !!!CloudShell/Linux!!!
 #
 mkdir ~/bin && cd ~/bin
-curl https://storage.googleapis.com/csm-artifacts/asm/asmcli_1.13 > asmcli
+curl https://storage.googleapis.com/csm-artifacts/asm/asmcli_1.14 > asmcli
 chmod +x asmcli
 ./asmcli install \
   --project_id ${PROJECT_ID} \
