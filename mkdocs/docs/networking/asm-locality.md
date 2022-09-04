@@ -17,9 +17,6 @@ skaffold build
 tag=`skaffold build --dry-run --output='{{json .}}' --quiet |jq '.builds[].tag' -r`
 skaffold deploy --images ${tag}
 
-# Apply locality setting
-kubectl apply -f manifests/istio -n run-tracker
-
 # Run
 endpoint=`kubectl get svc/istio-ingressgateway -n run-tracker -o "jsonpath={.status.loadBalancer.ingress[0].ip}"`
 curl -v http://${endpoint}/trip |jq
