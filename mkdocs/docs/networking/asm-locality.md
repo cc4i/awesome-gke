@@ -10,6 +10,7 @@ Visualize pods across the nodes in different zones to supports highly available 
 git clone https://github.com/cc4i/multi-k8s.git
 cd multi-k8s
 cd asset/tod/bin && ./gke.sh
+# Execute printed commands to install Anthos Services Mesh
 
 # Provision & deployment
 skaffold build 
@@ -37,3 +38,4 @@ open http://${endpoint}/tracker-ui
 ```
 
 ## Notes
+- Install script was built to run on Linux, so [run them in Cloud Shell or Linux](https://cloud.google.com/service-mesh/docs/unified-install/install-dependent-tools#install_required_tools) to install Anthos Services Mesh.

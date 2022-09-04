@@ -12,11 +12,13 @@ cd multi-k8s
 cd asset/tod/bin && ./gke-affinity.sh
 
 # Apply manifests
-cd ..
-kubectl apply -f manifests/ns.yaml
-kubectl apply -f manifests/service-account.yaml
-kubectl apply -f deploy-affinity
-kubectl apply -f service
+cd ../manifests/examples/single-zone
+kustomize build . |kubectl apply -f -
+
+# 
+endpoint=`kubectl get svc/svc-1 -n run-tracker -o "jsonpath={.status.loadBalancer.ingress[0].ip}"`
+# Access by http://${endpoint}/tracker-ui
+open http://${endpoint}:8000/tracker-ui
 
 ```
 

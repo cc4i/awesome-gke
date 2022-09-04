@@ -28,7 +28,6 @@ gcloud container --project ${PROJECT_ID} clusters create ${GKE_CLUSTER} \
     --no-enable-master-authorized-networks \
     --addons HorizontalPodAutoscaling,HttpLoadBalancing,GcePersistentDiskCsiDriver \
     --max-surge-upgrade 1 --max-unavailable-upgrade 0 \
-    --labels mesh_id=proj-${PROJECT_NUMBER} \
     --workload-pool "${PROJECT_ID}.svc.id.goog" \
     --enable-shielded-nodes \
     --node-locations ${ZONE_A}
@@ -57,6 +56,14 @@ gcloud beta container --project "${PROJECT_ID}" node-pools create "np-${INSTANCE
     --max-pods-per-node "30" \
     --node-locations ${ZONE_C}
 
+
+# 3. Remove default node pool
+gcloud beta container --project "${PROJECT_ID}" node-pools delete default-pool \
+    --cluster ${GKE_CLUSTER} \
+    --region  ${REGION} \
+    --quiet
+
+# 4. Rename kube context
 kubectl config rename-context gke_${PROJECT_ID}_${REGION}_${GKE_CLUSTER} ${GKE_CLUSTER}
 
 
