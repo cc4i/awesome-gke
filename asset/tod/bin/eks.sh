@@ -4,7 +4,7 @@ export EKS_CLUSTER=eks-sculpture
 export REGION=ap-southeast-1
 
 # 1. Create an EKS cluster
-eksctl create cluster --name ${EKS_CLUSTER} --region ${REGION}
+eksctl create cluster --name ${EKS_CLUSTER} --region ${REGION} --set-kubeconfig-context ${EKS_CLUSTER}
 node_group=`eksctl get nodegroups --cluster ${EKS_CLUSTER} -o json | jq -r ".[].Name"`
 eksctl scale nodegroup --name ${node_group} --cluster ${EKS_CLUSTER} -N 6 -M 8
 
@@ -21,7 +21,7 @@ oidc_issuer=`aws eks describe-cluster --name ${EKS_CLUSTER} \
 
 # 2. Atached the EKS cluster to GCP Fleet
 gcloud container fleet memberships register ${EKS_CLUSTER} \
-  --context=chuancc-code@${EKS_CLUSTER}.${REGION}.eksctl.io \
+  --context=${EKS_CLUSTER} \
   --kubeconfig=~/.kube/config \
   --enable-workload-identity \
   --public-issuer-url=${oidc_issuer}
@@ -62,3 +62,4 @@ bear_token=`kubectl get secret ${secret_name} -o jsonpath='{$.data.token}' | bas
 
 echo "The following token is to login into the EKS cluster ::"
 echo ${bear_token}
+

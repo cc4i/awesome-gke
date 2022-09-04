@@ -54,7 +54,7 @@ chmod +x asmcli
   --ca mesh_ca
 rev=`kubectl get deploy -n istio-system -l app=istiod -o \
   "jsonpath={.items[*].metadata.labels['istio\.io/rev']}{'\n'}"`
-sed -e s/REVISION/${rev}/g manifests/base/ns.yaml > manifests/base/ns-rev.yaml
+sed -e s/REVISION/${rev}/g ../manifests/base/ns.yaml > ../manifests/base/ns-rev.yaml
 """
 #
 
