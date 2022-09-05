@@ -15,12 +15,18 @@ Welcome to Kubernetes on Google Cloud, the goal of this repo is to offer a colle
 - CI/CD
 - Tooling
 
+
 Will include advanced topics in the future: 
 
 - Multi/Hybrid Clusters
 - Solutions on GKE
 - Workaround for something 
 
+>[Live docs](https://cc4i.github.io/multi-k8s/)
+
 ## Contributing
 
 Encourage you to contribute to this repo if you have implemented a practice that has proven to solve something, just open an issue or a pull request to share with us, please.
+
+## Notes
+Starring the repo if you feel helpful, that's the big motivation and thanks.

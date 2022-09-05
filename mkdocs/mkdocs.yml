@@ -1,11 +1,11 @@
 site_name: Kubernetes on Google Cloud
 site_url: https://github.com/cc4i/multi-k8s/
 nav:
-  - Home: index.md
+  - Home: 'index.md'
   - 'General':
     - '1. Preparing GKE cluster for PRODUCTION': general/prepare-gke.md
   - 'Scaling':
-    - 'Solve the issue of blocking scale-down': general/block-scaling.md
+    - 'Solve the issue of blocking scale-down': scaling/block-scaling.md
   - 'Networking':
     - '1. Deploy workload into single zone with high availability': networking/single-zone.md
     - '2. Reduce inter-zone traffic with Anthhos Service Mesh': networking/asm-locality.md
@@ -22,7 +22,7 @@ nav:
     - '2. Use customized Cluster Autoscaler instead of built-in one from GKE': workaround/custom-autoscaler.md
     - '3. Three ways to surpass ephemeral storage limit of GKE Autopilot': workaround/autopilot-storage.md
   - About:
-    - 'License': '../LICENSE'
+    - 'License': 'license.md'
     - 'Release Notes': 'release-notes.md'
 theme: 
   name: material
