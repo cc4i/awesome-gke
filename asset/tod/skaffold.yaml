@@ -23,7 +23,7 @@ build:
 deploy:
   kustomize:
     paths: 
-      - ./manifests/examples/locality/.
+      - ./manifests/examples/locality/
   #   buildArgs:
   #     - "--load-restrictor LoadRestrictionsNone"
   # kubectl:
@@ -38,5 +38,11 @@ deploy:
   #     - manifests/service/svc-3.yaml
   #     - manifests/deploy/deploy-svc-4.yaml
   #     - manifests/service/svc-4.yaml
-          
   statusCheck: true
+
+profiles:
+  - name: aws
+    deploy:
+      kustomize:
+        paths:
+          - ./manifests/examples/locality/aws/
