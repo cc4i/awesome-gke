@@ -15,7 +15,7 @@
 apiVersion: compute.cnrm.cloud.google.com/v1beta1
 kind: ComputeSubnetwork
 metadata: # kpt-merge: networking/network-name-subnetwork
-  name: network-name-subnetwork # kpt-set: ${prefix}${network-name}-subnetwork
+  name: network-name-subnetwork # kpt-set: ${network-name}-subnetwork-${region}
   namespace: networking # kpt-set: ${namespace}
   annotations:
     cnrm.cloud.google.com/project-id: project-id # kpt-set: ${project-id}

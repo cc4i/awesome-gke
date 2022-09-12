@@ -15,7 +15,7 @@
 apiVersion: compute.cnrm.cloud.google.com/v1beta1
 kind: ComputeRouterNAT
 metadata: # kpt-merge: networking/network-name-router-nat
-  name: network-name-router-nat # kpt-set: ${prefix}${network-name}-router-nat
+  name: network-name-router-nat # kpt-set: ${network-name}-router-nat
   namespace: networking # kpt-set: ${namespace}
   annotations:
     cnrm.cloud.google.com/project-id: project-id # kpt-set: ${project-id}
@@ -24,13 +24,13 @@ spec:
   natIpAllocateOption: AUTO_ONLY
   region: us-central1 # kpt-set: ${region}
   routerRef:
-    name: network-name-router # kpt-set: ${prefix}${network-name}-router
+    name: network-name-router # kpt-set: ${network-name}-router
   sourceSubnetworkIpRangesToNat: ALL_SUBNETWORKS_ALL_IP_RANGES # kpt-set: ${source-subnetwork-ip-ranges-to-nat}
 ---
 apiVersion: compute.cnrm.cloud.google.com/v1beta1
 kind: ComputeRouter
 metadata: # kpt-merge: networking/network-name-router
-  name: network-name-router # kpt-set: ${prefix}${network-name}-router
+  name: network-name-router # kpt-set: ${network-name}-router
   namespace: networking # kpt-set: ${namespace}
   annotations:
     cnrm.cloud.google.com/project-id: project-id # kpt-set: ${project-id}
