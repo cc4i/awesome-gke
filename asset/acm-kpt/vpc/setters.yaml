@@ -17,7 +17,7 @@ kind: ConfigMap
 metadata: # kpt-merge: /setters
   name: setters
 data:
-  namespace: config-control
-  network-name: gke-test-vpc
-  project-id: play-with-anthos-340801
-  prefix: gke-test-vpc-nat
+  namespace: ${CONFIG_NAMESPACE}
+  network-name: ${VPC_NAME}
+  project-id: ${PROJECT_ID}
+  prefix: ${VPC_NAME}-nat
