@@ -16,6 +16,7 @@ nav:
 
   - 'Solutions':
     - '1. K3s integrate Google Cloud Provider on GCE': solutions/play-k3s.md
+    - '2. Manage GKEs with Anthos Config Management & kpt': solutions/acm-kpt.md
   
   - 'Workaround':
     - '1. Run a boortrap script when launching nodes in GKE': workaround/startup-script.md
