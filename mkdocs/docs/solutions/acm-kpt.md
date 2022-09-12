@@ -13,6 +13,7 @@ The tutorial is to compose the [Kubernetes Resource Model (KRM) blueprints](http
 
 ```sh
 
+# 1. Setup environment variables
 export PROJECT_ID=play-with-anthos-340801
 export ACM_CONTROLLER=acm-controller
 export REGION=us-central1
@@ -21,17 +22,17 @@ export VPC_NAME=gke-test-vpc
 export SUBNET_NAME=${VPC_NAME}-subnetwork-${REGION}
 export GKE_CLUSTER=acm-kpt-cluster
 
-# Enable APIs
+# 2. Enable APIs
 gcloud services enable serviceusage.googleapis.com \
     krmapihosting.googleapis.com \
     container.googleapis.com \
     cloudresourcemanager.googleapis.com
 
-# Create Anthos Config Controller, GKE cluster could be private with NAT, more detail - https://cloud.google.com/sdk/gcloud/reference/anthos/config/controller/create
+# 3. Create Anthos Config Controller, GKE cluster could be private with NAT, more detail - https://cloud.google.com/sdk/gcloud/reference/anthos/config/controller/create
 gcloud anthos config controller create ${ACM_CONTROLLER} \
     --location=${REGION}
 
-# Give Config Controller permission to manage Google Cloud resources
+# 4. Give Config Controller permission to manage Google Cloud resources
 export SA_EMAIL="$(kubectl get ConfigConnectorContext -n config-control \
     -o jsonpath='{.items[0].spec.googleServiceAccount}' 2> /dev/null)"
 gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
@@ -40,7 +41,7 @@ gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
     --project "${PROJECT_ID}"
 
 
-# Verify that Config Connector is configured and healthy in the project namespace
+# 5. Verify that Config Connector is configured and healthy in the project namespace
 kubectl get ConfigConnectorContext -n ${CONFIG_NAMESPACE} \
     -o "custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name,HEALTHY:.status.healthy"
 
@@ -54,7 +55,7 @@ mv setters-val.yaml setters.yaml
 # kpt fn eval --image set-namespace:v0.1 -- namespace=config-control
 
 
-# Configure subnet 
+# 6. Configure subnet 
 kpt pkg get \
   https://github.com/cc4i/multi-k8s.git/asset/acm-kpt/subnet@main \
   ${SUBNET_NAME}
@@ -64,7 +65,7 @@ mv setters-val.yaml setters.yaml
 # kpt fn eval --image set-namespace:v0.1 -- namespace=config-control
 
 
-# Initialize the working directory with kpt, which creates a resource to track changes
+# 7. Initialize the working directory with kpt, which creates a resource to track changes
 cd ..
 kpt fn render
 kpt live init --namespace config-control
@@ -72,7 +73,7 @@ kpt live apply --dry-run
 kpt live apply
 kpt live status --output table --poll-until current
 
-# Configure GKE
+# 8. Configure GKE
 cd ..
 kpt pkg get \
   https://github.com/cc4i/multi-k8s.git/asset/acm-kpt/gke@main \
@@ -101,6 +102,6 @@ kpt live destroy
 
 ## References 
 
-- https://cloud.google.com/anthos-config-management/docs/concepts/blueprints#krm-blueprints
-- https://cloud.google.com/anthos-config-management/docs/tutorials/gke-cluster-blueprint 
-- https://github.com/GoogleCloudPlatform/blueprints/tree/main/catalog
+- [KRM Blueprints](https://cloud.google.com/anthos-config-management/docs/concepts/blueprints#krm-blueprints)
+- [GKE Cluster Bluepint](https://cloud.google.com/anthos-config-management/docs/tutorials/gke-cluster-blueprint)
+- [Blueprint Catalog in Github](https://github.com/GoogleCloudPlatform/blueprints/tree/main/catalog)
