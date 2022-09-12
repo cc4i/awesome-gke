@@ -31,3 +31,8 @@ spec:
     name: network-name # kpt-set: ${network-name}
   privateIpGoogleAccess: false
   region: us-central1 # kpt-set: ${region}
+  secondaryIpRange:
+  - ipCidrRange: 172.17.0.0/16
+    rangeName: pods
+  - ipCidrRange: 172.18.0.0/16
+    rangeName: services
