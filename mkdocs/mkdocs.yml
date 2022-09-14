@@ -4,8 +4,10 @@ nav:
   - Home: 'index.md'
   - 'General':
     - '1. Preparing GKE cluster for PRODUCTION': general/prepare-gke.md
+
   - 'Scaling':
     - 'Solve the issue of blocking scale-down': scaling/block-scaling.md
+
   - 'Networking':
     - '1. Deploy workload into single zone with high availability': networking/single-zone.md
     - '2. Reduce inter-zone traffic with Anthhos Service Mesh': networking/asm-locality.md
@@ -13,6 +15,10 @@ nav:
 
   - 'Security':
     - '1. Acccessing AWS services from GKE through workload identity': security/workload-idetity.md
+    - '2. Secure CI/CD following SLSA': security/slsa.md
+
+  - 'Operation':
+    - '1. Improve Observeabiltiy with Google Cloud Managed Prometheus': operation/gpm.md
 
   - 'Solutions':
     - '1. K3s integrate Google Cloud Provider on GCE': solutions/play-k3s.md
