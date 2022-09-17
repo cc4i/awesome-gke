@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tracker-svc-1
+spec:
+  template: 
+    spec:
+      nodeSelector:
+        cloud.google.com/compute-class: Scale-Out
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tracker-svc-2
+spec:
+  template: 
+    spec:
+      nodeSelector:
+        cloud.google.com/compute-class: Scale-Out
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tracker-svc-3
+spec:
+  template: 
+    spec:
+      nodeSelector:
+        cloud.google.com/compute-class: Scale-Out
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tracker-svc-4
+spec:
+  template: 
+    spec:
+      nodeSelector:
+        cloud.google.com/compute-class: Scale-Out

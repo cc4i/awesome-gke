@@ -1,0 +1,15 @@
+
+namespace: run-tracker
+
+images:
+  - name: us-central1-docker.pkg.dev/play-with-anthos-340801/jigaree/tracker
+    newTag: "d7dc250"
+
+resources:
+  - ../../base
+  - ../../redis
+  - ../../deploy
+  - ../../service
+
+patchesStrategicMerge:
+  - patch.yaml
