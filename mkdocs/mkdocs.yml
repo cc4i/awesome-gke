@@ -6,7 +6,7 @@ nav:
     - '1. Preparing GKE cluster for PRODUCTION': general/prepare-gke.md
 
   - 'Scaling':
-    - 'Solve the issue of blocking scale-down': scaling/block-scaling.md
+    - '1. Solve the issue of blocking scale-down': scaling/block-scaling.md
 
   - 'Networking':
     - '1. Runing in single zone with high availability': networking/single-zone.md
