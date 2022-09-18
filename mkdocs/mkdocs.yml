@@ -9,10 +9,11 @@ nav:
     - 'Solve the issue of blocking scale-down': scaling/block-scaling.md
 
   - 'Networking':
-    - '1. Deploy workload into single zone with high availability': networking/single-zone.md
-    - '2. Reduce inter-zone traffic with Anthhos Service Mesh': networking/asm-locality.md
-    - '3. Hybrid connectivity with services on AWS EKS': networking/glb-locality.md
+    - '1. Runing in single zone with high availability': networking/single-zone.md
+    - '2. Reduce interzone traffic with Anthhos Service Mesh': networking/asm-locality.md
+    - '3. Hybrid connectivity with services on AWS': networking/glb-locality.md
     - '4. Network recipes of GKE from Google Cloud': networking/recipes.md
+    - '5. Weight-based TCP routing': networking/weight-tcp.md
 
   - 'Security':
     - '1. Acccessing AWS services from GKE through workload identity': security/workload-idetity.md

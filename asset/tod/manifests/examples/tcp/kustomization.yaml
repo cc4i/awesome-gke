@@ -1,0 +1,39 @@
+
+namespace: run-tracker
+
+images:
+  - name: us-central1-docker.pkg.dev/play-with-anthos-340801/jigaree/tracker
+    newTag: "v0.11-2-gc4256bd-dirty"
+
+resources:
+  - ../../base
+  - ../../redis
+  - ../../deploy
+  - ../../service
+  - ../../weight-tcp
+
+patches:
+  - patch: |-
+      - op: replace
+        path: /metadata/annotations
+        value:
+          cloud.google.com/neg: '{"exposed_ports": {"8008":{"name": "svc-1-tcp-neg"}}}'   
+    target:
+      kind: Service
+      name: svc-1
+  - patch: |-
+      - op: replace
+        path: /metadata/annotations
+        value:
+          cloud.google.com/neg: '{"exposed_ports": {"8008":{"name": "svc-1-v2-tcp-neg"}}}'   
+    target:
+      kind: Service
+      name: svc-1-v2
+  - patch: |-
+      - op: replace
+        path: /metadata/labels
+        value:
+          istio-injection: enabled
+    target:
+      kind: Namespace
+      name: run-tracker

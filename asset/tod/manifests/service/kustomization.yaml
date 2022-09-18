@@ -1,5 +1,6 @@
 resources:
   - svc-1.yaml
+  - svc-1-v2.yaml
   - svc-2.yaml
   - svc-3.yaml
   - svc-4.yaml

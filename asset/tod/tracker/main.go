@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 	"tracker/ks"
+	"tracker/tcp"
 	"tracker/trip"
 
 	"github.com/google/uuid"
@@ -297,14 +298,7 @@ func router(ctx context.Context, r *gin.Engine) *gin.Engine {
 	return r
 }
 
-func main() {
-	whereami = "gcp"
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
-	zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	if gin.IsDebugging() {
-		zerolog.SetGlobalLevel(zerolog.DebugLevel)
-	}
-
+func httpSrv() {
 	gin.DisableConsoleColor()
 	server := gin.Default()
 
@@ -314,10 +308,37 @@ func main() {
 	config.AllowCredentials = true
 	server.Use(cors.Default())
 
+	//default port=8000
 	if port := os.Getenv("POD_PORT"); port != "" {
 		log.Fatal().Err(router(context.Background(), server).Run("0.0.0.0:" + port))
 	} else {
 		log.Fatal().Err(router(context.Background(), server).Run("0.0.0.0:8000"))
 	}
+
+}
+
+func tcpSrv() {
+	//default port=8008
+	if port := os.Getenv("POD_TCP_PORT"); port != "" {
+		tcp.Run(port)
+	} else {
+		tcp.Run("8008")
+	}
+
+}
+
+func main() {
+	whereami = "gcp"
+	//Configure zerolog
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	if gin.IsDebugging() {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	}
+
+	//Start TCP backend
+	go tcpSrv()
+	//Start HTTP backend
+	httpSrv()
 
 }

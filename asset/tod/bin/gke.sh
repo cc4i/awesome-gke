@@ -41,7 +41,7 @@ kubectl config rename-context gke_${PROJECT_ID}_${REGION}_${GKE_CLUSTER_ISTIO} $
 # 2.Install ASM/Istio from !!!CloudShell/Linux!!!
 #
 echo """
-mkdir ~/bin && cd ~/bin
+mkdir ~/bin && cd ~/bin && mkdir ${GKE_CLUSTER_ISTIO}
 curl https://storage.googleapis.com/csm-artifacts/asm/asmcli_1.14 > asmcli
 chmod +x asmcli
 ./asmcli install \
@@ -49,7 +49,7 @@ chmod +x asmcli
   --cluster_name ${GKE_CLUSTER_ISTIO} \
   --cluster_location ${REGION} \
   --fleet_id ${PROJECT_ID} \
-  --output_dir ~/bin \
+  --output_dir ~/bin/${GKE_CLUSTER_ISTIO} \
   --enable_all \
   --ca mesh_ca
 rev=`kubectl get deploy -n istio-system -l app=istiod -o \

@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: svc-1
+  name: svc-1-v2
 spec: 
   type: ClusterIP
   selector:
     app: tracker
     svc: svc-1
-    ver: v1
+    ver: v2
   ports:
   - name: http
     port: 8000

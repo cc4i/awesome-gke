@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment 
 metadata:
-  name: tracker-svc-1
+  name: tracker-svc-1-v2
 spec:
   replicas: 2
   selector:
     matchLabels:
       app: tracker
       svc: svc-1
-      ver: v1
+      ver: v2
   template:
     metadata:
       labels: 
         app: tracker
         svc: svc-1
-        ver: v1
+        ver: v2
     spec:
       terminationGracePeriodSeconds: 20
       containers:
@@ -23,7 +23,7 @@ spec:
         imagePullPolicy: "Always"
         env:
           - name: TRACKER_VERSION
-            value: v1
+            value: v2
           - name: POD_NAME
             valueFrom: 
               fieldRef:

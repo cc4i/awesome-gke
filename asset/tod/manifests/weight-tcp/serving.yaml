@@ -1,0 +1,58 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: tracker-tcp-gateway
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 8008
+      name: tcp
+      protocol: TCP
+    hosts:
+    - "*"
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: tracker-tcp-ds
+spec:
+  host: tracker-tcp-weight
+  subsets:
+  - name: v1
+    labels:
+      ver: v1
+  - name: v2
+    labels:
+      ver: v2
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: tracker-tcp-vs
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - tracker-tcp-gateway
+  tcp:
+  - match:
+    - port: 8008
+    route:
+    - destination:
+        host: tracker-tcp-weight
+        port:
+          number: 8008
+        subset: v1
+      # Modify weight for service v1
+      weight: 0
+    - destination:
+        host: tracker-tcp-weight
+        port:
+          number: 8008
+        subset: v2
+      # Modify weight for service v2
+      weight: 100
+    

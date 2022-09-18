@@ -1,0 +1,4 @@
+resources:
+  - ingress-gateway.yaml
+  - tracker-tcp-weight.yaml
+  - serving.yaml
