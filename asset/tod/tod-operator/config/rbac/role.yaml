@@ -8,6 +8,36 @@ rules:
 - apiGroups:
   - tracker.tod.cc4i.xyz
   resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - tracker.tod.cc4i.xyz
+  resources:
+  - deployments/status
+  verbs:
+  - get
+- apiGroups:
+  - tracker.tod.cc4i.xyz
+  resources:
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - tracker.tod.cc4i.xyz
+  resources:
   - trackertops
   verbs:
   - create

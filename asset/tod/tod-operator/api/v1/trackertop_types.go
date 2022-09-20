@@ -36,7 +36,7 @@ type TrackerTopSpec struct {
 	Trackers []Tracker `json:"trackers"`
 
 	// Topology is to define relations between Trackers
-	Graph Topology `json:"graph"`
+	Graph []Topology `json:"graph,omitempty"`
 }
 
 // ServingType describe how to expose Tracker service, basically it's same as normal Service
@@ -54,6 +54,10 @@ type Tracker struct {
 	Name string `json:"name"`
 	// Dependent container image for Tracker
 	Image string `json:"image"`
+	// Verison of Tracker
+	Version string `json:"version"`
+	// Replicas of Tracker
+	Replicas *int32 `json:"replicas"`
 	// Expose URI, eg: http://host:port/path
 	ServingUri string `json:"servingUri,omitempty"`
 	// Service protocol
@@ -61,7 +65,7 @@ type Tracker struct {
 	// Service Type
 	ServingType ServingType `json:"servingType,omitempty"` //eg: ClusterIP, LoadBalancer, NodePort
 	// Connection to Redis
-	RedisConn string `json:"redisConn"`
+	RedisConn string `json:"redisConn,omitempty"`
 	// Where to host service
 	HostedCloud string `json:"hostedCloud,omitempty"`
 }

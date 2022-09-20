@@ -3,4 +3,11 @@ kind: TrackerTop
 metadata:
   name: trackertop-sample
 spec:
-  # TODO(user): Add fields here
+  where: "run-test"
+  trackers:
+    - name: front-svc1
+      image: us-central1-docker.pkg.dev/play-with-anthos-340801/jigaree/tracker:v0.11-2-gc4256bd-dirty
+      version: v1
+      replicas: 1
+  graph: 
+    - name: front-svc1
