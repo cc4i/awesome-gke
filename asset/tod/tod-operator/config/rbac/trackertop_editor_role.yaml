@@ -1,0 +1,24 @@
+# permissions for end users to edit trackertops.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: trackertop-editor-role
+rules:
+- apiGroups:
+  - tracker.tod.cc4i.xyz
+  resources:
+  - trackertops
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - tracker.tod.cc4i.xyz
+  resources:
+  - trackertops/status
+  verbs:
+  - get

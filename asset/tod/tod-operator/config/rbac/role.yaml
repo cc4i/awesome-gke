@@ -1,0 +1,33 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - tracker.tod.cc4i.xyz
+  resources:
+  - trackertops
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - tracker.tod.cc4i.xyz
+  resources:
+  - trackertops/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - tracker.tod.cc4i.xyz
+  resources:
+  - trackertops/status
+  verbs:
+  - get
+  - patch
+  - update

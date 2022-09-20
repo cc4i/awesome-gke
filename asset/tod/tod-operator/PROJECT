@@ -1,0 +1,16 @@
+domain: tod.cc4i.xyz
+layout:
+- go.kubebuilder.io/v3
+projectName: tod-operator
+repo: tod.cc4i.xyz/tod-operator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: tod.cc4i.xyz
+  group: tracker
+  kind: TrackerTop
+  path: tod.cc4i.xyz/tod-operator/api/v1
+  version: v1
+version: "3"

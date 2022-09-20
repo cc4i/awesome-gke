@@ -1,0 +1,6 @@
+apiVersion: tracker.tod.cc4i.xyz/v1
+kind: TrackerTop
+metadata:
+  name: trackertop-sample
+spec:
+  # TODO(user): Add fields here
