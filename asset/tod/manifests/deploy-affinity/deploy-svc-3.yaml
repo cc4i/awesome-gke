@@ -27,7 +27,7 @@ spec:
           - name: POD_NAMESPACE
             valueFrom: 
               fieldRef:
-                fieldPath: metadata.name
+                fieldPath: metadata.namespace
           - name: POD_NODE_NAME
             valueFrom: 
               fieldRef:
