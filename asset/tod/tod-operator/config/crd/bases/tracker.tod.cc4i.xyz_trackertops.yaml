@@ -95,9 +95,6 @@ spec:
                     name:
                       description: Service name for Tracker
                       type: string
-                    redisConn:
-                      description: Connection to Redis
-                      type: string
                     replicas:
                       description: Replicas of Tracker
                       format: int32
