@@ -78,8 +78,6 @@ type Tracker struct {
 	ServingProtocol string `json:"servingProtocol,omitempty"` //eg: HTTP, HTTPS, TCP, GRPC
 	// Service Type
 	ServingType ServingType `json:"servingType,omitempty"` //eg: ClusterIP, LoadBalancer, NodePort
-	// Connection to Redis
-	RedisConn string `json:"redisConn,omitempty"`
 	// Where to host service
 	HostedCloud string `json:"hostedCloud,omitempty"`
 }

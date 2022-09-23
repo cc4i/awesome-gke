@@ -108,7 +108,10 @@ func (r *TrackerTopReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 				return ctrl.Result{}, err
 			}
 		} else if err == nil {
-			if !reflect.DeepEqual(foundService.Spec.Selector, ts.Spec.Selector) {
+			if !reflect.DeepEqual(foundService.Spec.Selector, ts.Spec.Selector) ||
+				foundService.Spec.Type != ts.Spec.Type ||
+				!reflect.DeepEqual(foundService.Spec.Ports, ts.Spec.Ports) {
+
 				foundService.Spec.Type = ts.Spec.Type
 				foundService.Spec.Selector = ts.Spec.Selector
 				foundService.Spec.Ports = ts.Spec.Ports
@@ -153,7 +156,10 @@ func (r *TrackerTopReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 				return ctrl.Result{}, err
 			}
 		} else if err == nil {
-			if !reflect.DeepEqual(foundService.Spec.Selector, rs.Spec.Selector) {
+			if !reflect.DeepEqual(foundService.Spec.Selector, rs.Spec.Selector) ||
+				foundService.Spec.Type != rs.Spec.Type ||
+				!reflect.DeepEqual(foundService.Spec.Ports, rs.Spec.Ports) {
+
 				foundService.Spec.Type = rs.Spec.Type
 				foundService.Spec.Selector = rs.Spec.Selector
 				foundService.Spec.Ports = rs.Spec.Ports
