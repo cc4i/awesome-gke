@@ -57,6 +57,31 @@ spec:
                   - name
                   type: object
                 type: array
+              redis:
+                description: Shared Redis for kv store
+                properties:
+                  host:
+                    type: string
+                  image:
+                    description: Dependent container image for Tracker
+                    type: string
+                  name:
+                    type: string
+                  password:
+                    type: string
+                  port:
+                    format: int32
+                    type: integer
+                  protocol:
+                    type: string
+                  user:
+                    type: string
+                required:
+                - host
+                - image
+                - name
+                - port
+                type: object
               trackers:
                 description: Tracker will be placed as per topology
                 items:
@@ -104,6 +129,7 @@ spec:
                 description: Specified a namespace to provison resources
                 type: string
             required:
+            - redis
             - trackers
             - where
             type: object

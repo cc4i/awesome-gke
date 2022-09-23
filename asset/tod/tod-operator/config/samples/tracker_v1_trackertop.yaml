@@ -11,3 +11,8 @@ spec:
       replicas: 1
   graph: 
     - name: front-svc1
+  redis:
+    image: "redis:alpine"
+    name: "redis-4tracker"
+    host: "redis-4tracker"
+    port: 6379

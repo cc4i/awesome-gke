@@ -37,6 +37,9 @@ type TrackerTopSpec struct {
 
 	// Topology is to define relations between Trackers
 	Graph []Topology `json:"graph,omitempty"`
+
+	// Shared Redis for kv store
+	Redis ThirdParty `json:"redis"`
 }
 
 // ServingType describe how to expose Tracker service, basically it's same as normal Service
@@ -48,6 +51,17 @@ const (
 	LoadBalancer ServingType = "LoadBalancer"
 	NodePort     ServingType = "NodePort"
 )
+
+type ThirdParty struct {
+	Name string `json:"name"`
+	// Dependent container image for Tracker
+	Image    string `json:"image"`
+	Host     string `json:"host"`
+	Port     int32  `json:"port"`
+	Protocol string `json:"protocol,omitempty"`
+	User     string `json:"user,omitempty"`
+	Password string `json:"password,omitempty"`
+}
 
 type Tracker struct {
 	// Service name for Tracker

@@ -53,7 +53,7 @@ cd multi-k8s/asset/k3s/bin && ./k3s-ha.sh
 
 - Following guidance to build Cloud Controller Manager (CCM) and push into your own image registry.
 
-- Configure RBAC and allow CCM working properly, see [reference](../../../asset/k3s/manifests/).
+- Configure RBAC and allow CCM working properly, see [reference](https://github.com/cc4i/multi-k8s/tree/main/asset/k3s/manifests).
 
 **Steps**
 

@@ -18,6 +18,8 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	"reflect"
 
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -26,6 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -64,114 +67,19 @@ func (r *TrackerTopReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	// Reconcile Tracker' Deployment & Service
 	for _, tracker := range tto.Spec.Trackers {
 
-		td := appv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      tracker.Name,
-				Namespace: tto.Spec.Where,
-				// OwnerReferences: []metav1.OwnerReference{
-				// 	{
-				// 		APIVersion: tto.APIVersion,
-				// 		Kind:       tto.Kind,
-				// 		Name:       tto.Name,
-				// 		UID:        tto.UID,
-				// 	},
-				// },
-			},
-			Spec: appv1.DeploymentSpec{
-				Replicas: tracker.Replicas,
-				Selector: &metav1.LabelSelector{
-					MatchLabels: map[string]string{
-						"app": "tracker",
-						"svc": tracker.Name,
-					},
-				},
-				Template: corev1.PodTemplateSpec{
-					ObjectMeta: metav1.ObjectMeta{
-						Labels: map[string]string{
-							"app": "tracker",
-							"svc": tracker.Name,
-						},
-					},
-					Spec: corev1.PodSpec{
-						Containers: []corev1.Container{
-							{
-								Name:  "tracker",
-								Image: tracker.Image,
-								Env: []corev1.EnvVar{
-									{
-										Name:  "TRACKER_VERSION",
-										Value: tracker.Version,
-									},
-									{
-										Name: "POD_NAME",
-										ValueFrom: &corev1.EnvVarSource{
-											FieldRef: &corev1.ObjectFieldSelector{
-												FieldPath: "metadata.name",
-											},
-										},
-									},
-									{
-										Name: "POD_NAMESPACE",
-										ValueFrom: &corev1.EnvVarSource{
-											FieldRef: &corev1.ObjectFieldSelector{
-												FieldPath: "metadata.namespace",
-											},
-										},
-									},
-									{
-										Name: "POD_NODE_NAME",
-										ValueFrom: &corev1.EnvVarSource{
-											FieldRef: &corev1.ObjectFieldSelector{
-												FieldPath: "spec.nodeName",
-											},
-										},
-									},
-									{
-										Name:  "REDIS_SERVER_ADDRESS",
-										Value: "redis-cart.run-tracker.svc.cluster.local:6379",
-									},
-								},
-								Ports: []corev1.ContainerPort{
-									{
-										Name:          "http",
-										ContainerPort: 8000,
-									},
-									{
-										Name:          "tcp",
-										ContainerPort: 8008,
-									},
-								},
-								Resources: corev1.ResourceRequirements{
-									Requests: corev1.ResourceList{
-										"cpu": resource.Quantity{
-											Format: "200m",
-										},
-									},
-
-									Limits: corev1.ResourceList{
-										"cpu": resource.Quantity{
-											Format: "500m",
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		}
-
+		td := buildTrackerDeploy(tracker, tto.Spec.Redis, tto.Spec.Where)
 		foundDeployment := &appv1.Deployment{}
 		err := r.Get(ctx, types.NamespacedName{Name: td.Name, Namespace: td.Namespace}, foundDeployment)
 		if err != nil && errors.IsNotFound(err) {
 			l.Info("Creating Deployment for Tracker", "deployment", td.Name)
-			if err := ctrl.SetControllerReference(&tto, &td, r.Scheme); err != nil {
+			if err := ctrl.SetControllerReference(&tto, td, r.Scheme); err != nil {
 				l.Error(err, "Unable to Set OwnerReferences to Tracker's Deployment", "td", td)
 				return ctrl.Result{}, err
 			}
-			if err = r.Create(ctx, &td); err != nil {
+			if err = r.Create(ctx, td); err != nil {
 				l.Error(err, "Unable to create Deployment for Tracker", "td", td)
 				return ctrl.Result{}, err
 			}
@@ -186,9 +94,301 @@ func (r *TrackerTopReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 			}
 		}
 
+		ts := buildTrackerService(tracker, tto.Spec.Where)
+		foundService := &corev1.Service{}
+		err = r.Get(ctx, types.NamespacedName{Name: ts.Name, Namespace: ts.Namespace}, foundService)
+		if err != nil && errors.IsNotFound(err) {
+			l.Info("Creating Service for Tracker", "service", ts.Name)
+			if err := ctrl.SetControllerReference(&tto, ts, r.Scheme); err != nil {
+				l.Error(err, "Unable to Set OwnerReferences to Tracker's Service", "ts", ts)
+				return ctrl.Result{}, err
+			}
+			if err = r.Create(ctx, ts); err != nil {
+				l.Error(err, "Unable to create Service for Tracker", "ts", ts)
+				return ctrl.Result{}, err
+			}
+		} else if err == nil {
+			if !reflect.DeepEqual(foundService.Spec.Selector, ts.Spec.Selector) {
+				foundService.Spec.Type = ts.Spec.Type
+				foundService.Spec.Selector = ts.Spec.Selector
+				foundService.Spec.Ports = ts.Spec.Ports
+				l.Info("Updating Service for Tracker", "service", foundService.Name)
+				if err = r.Update(ctx, foundService); err != nil {
+					l.Error(err, "Unable to update Service for Tracker", "ts", ts)
+					return ctrl.Result{}, err
+				}
+			}
+		}
+
+	}
+
+	// Reconcile Redis' Deployment & Service
+	if tto.Spec.Redis.Name != "" {
+		rd := buildRedisDeploy(tto.Spec.Redis, tto.Spec.Where)
+		foundDeployment := &appv1.Deployment{}
+		err := r.Get(ctx, types.NamespacedName{Name: rd.Name, Namespace: rd.Namespace}, foundDeployment)
+		if err != nil && errors.IsNotFound(err) {
+			l.Info("Creating Deployment for Redis", "deployment", rd.Name)
+			if err := ctrl.SetControllerReference(&tto, rd, r.Scheme); err != nil {
+				l.Error(err, "Unable to Set OwnerReferences to Redis's Deployment", "rd", rd)
+				return ctrl.Result{}, err
+			}
+			if err = r.Create(ctx, rd); err != nil {
+				l.Error(err, "Unable to create Deployment for Redis", "td", rd)
+				return ctrl.Result{}, err
+			}
+		}
+
+		rs := buildRedisService(tto.Spec.Redis, tto.Spec.Where)
+		foundService := &corev1.Service{}
+		err = r.Get(ctx, types.NamespacedName{Name: rs.Name, Namespace: rs.Namespace}, foundService)
+		if err != nil && errors.IsNotFound(err) {
+			l.Info("Creating Service for Redis", "service", rs.Name)
+			if err := ctrl.SetControllerReference(&tto, rs, r.Scheme); err != nil {
+				l.Error(err, "Unable to Set OwnerReferences to Redis's Service", "rs", rs)
+				return ctrl.Result{}, err
+			}
+			if err = r.Create(ctx, rs); err != nil {
+				l.Error(err, "Unable to create Service for Redis", "rs", rs)
+				return ctrl.Result{}, err
+			}
+		} else if err == nil {
+			if !reflect.DeepEqual(foundService.Spec.Selector, rs.Spec.Selector) {
+				foundService.Spec.Type = rs.Spec.Type
+				foundService.Spec.Selector = rs.Spec.Selector
+				foundService.Spec.Ports = rs.Spec.Ports
+				l.Info("Updating Service for Redis", "service", foundService.Name)
+				if err = r.Update(ctx, foundService); err != nil {
+					l.Error(err, "Unable to update Service for Redis", "rs", rs)
+					return ctrl.Result{}, err
+				}
+			}
+		}
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func buildTrackerDeploy(tracker trackerv1.Tracker, redis trackerv1.ThirdParty, ns string) *appv1.Deployment {
+	td := appv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      tracker.Name,
+			Namespace: ns,
+		},
+		Spec: appv1.DeploymentSpec{
+			Replicas: tracker.Replicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"app": "tracker",
+					"svc": tracker.Name,
+				},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app": "tracker",
+						"svc": tracker.Name,
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "tracker",
+							Image: tracker.Image,
+							Env: []corev1.EnvVar{
+								{
+									Name:  "TRACKER_VERSION",
+									Value: tracker.Version,
+								},
+								{
+									Name: "POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+								{
+									Name: "POD_NAMESPACE",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.namespace",
+										},
+									},
+								},
+								{
+									Name: "POD_NODE_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name:  "REDIS_SERVER_ADDRESS",
+									Value: fmt.Sprintf("%s.%s.svc.cluster.local:%d", redis.Host, ns, redis.Port),
+								},
+							},
+							Ports: []corev1.ContainerPort{
+								{
+									Name:          "http",
+									ContainerPort: 8000,
+								},
+								{
+									Name:          "tcp",
+									ContainerPort: 8008,
+								},
+							},
+							Resources: corev1.ResourceRequirements{
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU: resource.MustParse("200m"),
+								},
+
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU: resource.MustParse("500m"),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	return &td
+}
+
+func buildTrackerService(tracker trackerv1.Tracker, ns string) *corev1.Service {
+	ts := corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      tracker.Name,
+			Namespace: ns,
+		},
+		Spec: corev1.ServiceSpec{
+			Type: corev1.ServiceType(tracker.ServingType),
+			Selector: map[string]string{
+				"app": "tracker",
+				"svc": tracker.Name,
+			},
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "http",
+					Port:       8000,
+					TargetPort: intstr.IntOrString{IntVal: 8000},
+				},
+				{
+					Name:       "tcp",
+					Port:       8008,
+					TargetPort: intstr.IntOrString{IntVal: 8008},
+				},
+			},
+		},
+	}
+	return &ts
+}
+
+func buildRedisDeploy(redis trackerv1.ThirdParty, ns string) *appv1.Deployment {
+	rd := appv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      redis.Name,
+			Namespace: ns,
+		},
+		Spec: appv1.DeploymentSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"app": "redis-cart",
+				},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"sidecar.istio.io/inject": "false",
+					},
+					Labels: map[string]string{
+						"app": "redis-cart",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "redis",
+							Image: redis.Image,
+							Ports: []corev1.ContainerPort{
+								{
+									Name:          "tcp",
+									ContainerPort: redis.Port,
+								},
+							},
+							ReadinessProbe: &corev1.Probe{
+								PeriodSeconds: 5,
+								ProbeHandler: corev1.ProbeHandler{
+									TCPSocket: &corev1.TCPSocketAction{
+										Port: intstr.IntOrString{IntVal: redis.Port},
+									},
+								},
+							},
+
+							LivenessProbe: &corev1.Probe{
+								PeriodSeconds: 5,
+								ProbeHandler: corev1.ProbeHandler{
+									TCPSocket: &corev1.TCPSocketAction{
+										Port: intstr.IntOrString{IntVal: 6379},
+									},
+								},
+							},
+							Resources: corev1.ResourceRequirements{
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("500m"),
+									corev1.ResourceMemory: resource.MustParse("1024Mi"),
+								},
+
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU: resource.MustParse("2000m"),
+								},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "redis-data",
+									MountPath: "/data",
+								},
+							},
+						},
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: "redis-data",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	return &rd
+}
+
+func buildRedisService(redis trackerv1.ThirdParty, ns string) *corev1.Service {
+	rs := corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      redis.Name,
+			Namespace: ns,
+		},
+		Spec: corev1.ServiceSpec{
+			Type: corev1.ServiceType("ClusterIP"),
+			Selector: map[string]string{
+				"app": "redis-cart",
+			},
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "tcp",
+					Port:       redis.Port,
+					TargetPort: intstr.IntOrString{IntVal: redis.Port},
+				},
+			},
+		},
+	}
+	return &rs
 }
 
 // SetupWithManager sets up the controller with the Manager.
