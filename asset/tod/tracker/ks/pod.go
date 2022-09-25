@@ -7,16 +7,18 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-//TODO: Retrieve pod info by calling APIs.
+// TODO: Retrieve pod info by calling APIs.
 // Pod info
 type Pod struct {
-	Namespace string `json:"namespace"`
-	Name      string `json:"name"`
-	Image     string `json:"image,omitempty"`
-	NodeName  string `json:"node_name,omitempty"`
-	NodeIp    string `json:"node_ip,omitempty"`
-	Zone      string `json:"zone,omitempty"`
-	PodIp     string `json:"pod_ip,omitempty"`
+	Namespace  string `json:"namespace"`
+	Name       string `json:"name"`
+	Image      string `json:"image,omitempty"`
+	NodeName   string `json:"node_name,omitempty"`
+	NodeIp     string `json:"node_ip,omitempty"`
+	Zone       string `json:"zone,omitempty"`
+	PodIp      string `json:"pod_ip,omitempty"`
+	UpCaller   string `json:"up_caller,omitempty"`
+	NextCallee string `json:"next_callee,omitempty"`
 }
 
 type PodInterface interface {

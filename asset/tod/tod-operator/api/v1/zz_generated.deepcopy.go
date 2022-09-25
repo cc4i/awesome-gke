@@ -159,9 +159,9 @@ func (in *TrackerTopSpec) DeepCopyInto(out *TrackerTopSpec) {
 	}
 	if in.Graph != nil {
 		in, out := &in.Graph, &out.Graph
-		*out = make([]Topology, len(*in))
-		for i := range *in {
-			(*in)[i].DeepCopyInto(&(*out)[i])
+		*out = make(map[string]Topology, len(*in))
+		for key, val := range *in {
+			(*out)[key] = *val.DeepCopy()
 		}
 	}
 	out.Redis = in.Redis

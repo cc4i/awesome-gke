@@ -36,7 +36,7 @@ type TrackerTopSpec struct {
 	Trackers []Tracker `json:"trackers"`
 
 	// Topology is to define relations between Trackers
-	Graph []Topology `json:"graph,omitempty"`
+	Graph map[string]Topology `json:"graph,omitempty"`
 
 	// Shared Redis for kv store
 	Redis ThirdParty `json:"redis"`

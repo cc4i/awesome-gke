@@ -61,7 +61,8 @@ func simpleWs(c *gin.Context) {
 	}
 }
 
-// Get the URL for next call from env variable
+// Get the services list of next call from environment variable
+// eg: svc1,svc2,svc3
 func getNextCall() string {
 	return os.Getenv("NEXT_CALL")
 }
@@ -188,6 +189,7 @@ func startTrip(c *gin.Context) {
 
 // API (/initial) - get all pods as per request
 func getInitialPods(c *gin.Context) {
+	//Get initial cloud provider & namespace, then read /CRD::TrackerTop/ inside the namespace
 	from := c.Param("from")
 	whereami = from
 	buf, err := ioutil.ReadAll(c.Request.Body)
@@ -198,15 +200,13 @@ func getInitialPods(c *gin.Context) {
 
 	strs := strings.Split(string(buf), "::")
 	ns := strs[0]
-	prefixs := strings.Split(strs[1], ",")
-	log.Info().Strs("prefixs", prefixs).Send()
 
 	// Initial TripDetail with UUID
 	tp := &trip.TripDetail{
 		Id: uuid.New().String(),
 	}
 
-	if err = tp.GetInitialPods(whereami, ns, prefixs); err != nil {
+	if err = tp.GetInitialPods(whereami, ns); err != nil {
 		log.Error().Interface("error", err).Msg("getInitialPods()")
 		c.JSON(http.StatusInternalServerError, err)
 	} else {

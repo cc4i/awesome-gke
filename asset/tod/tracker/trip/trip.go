@@ -3,17 +3,22 @@ package trip
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 	"tracker/ks"
 
 	"github.com/rs/zerolog/log"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
 )
 
 // Invoking chain with reverse order
@@ -41,7 +46,7 @@ type Point struct {
 }
 
 type TripInterface interface {
-	GetInitialPods(from string, ns string, prefixs []string) error
+	GetInitialPods(from string, ns string) error
 	CallTrip(kp *ks.Pod, url string) error
 	TripHistory() error
 	GoTrip(whoami string, headers map[string]string, clientIp string, reqMethod string, reqUri string, nextCall string, whereami string) error
@@ -60,13 +65,18 @@ func contains(s []string, str string) bool {
 }
 
 // Get intial relations of pods under specificed namespace & call chain
-func (td *TripDetail) GetInitialPods(from string, ns string, prefixs []string) error {
+func (td *TripDetail) GetInitialPods(from string, ns string) error {
 
 	// creates the in-cluster config
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		log.Error().Interface("err", err).Msg("rest.InClusterConfig")
-		return err
+		log.Info().Msg("Outside of cluster and try reading kubeconfig")
+		config, err = clientcmd.BuildConfigFromFlags("", filepath.Join(homedir.HomeDir(), ".kube", "config"))
+		if err != nil {
+			log.Error().Interface("err", err).Msg("clientcmd.BuildConfigFromFlags")
+			return err
+		}
 	}
 	// creates the clientset
 	clientset, err := kubernetes.NewForConfig(config)
@@ -75,35 +85,46 @@ func (td *TripDetail) GetInitialPods(from string, ns string, prefixs []string) e
 		return err
 	}
 
-	pods, err := clientset.CoreV1().Pods(ns).List(context.TODO(), metav1.ListOptions{})
+	pods, err := clientset.CoreV1().Pods(ns).List(context.TODO(), v1.ListOptions{})
 	if err != nil {
 		time.Sleep(500 * time.Millisecond)
-		pods, err = clientset.CoreV1().Pods(ns).List(context.TODO(), metav1.ListOptions{})
+		pods, err = clientset.CoreV1().Pods(ns).List(context.TODO(), v1.ListOptions{})
 		if err != nil {
 			log.Error().Interface("err", err).Msg("clientset.CoreV1.Nodes.List")
 			return err
 		}
 	}
-	//Scanning all pods
+
+	//Scanning all pods with Label :: "app:tracker"
 	allPods := make(map[string]ks.Pod)
 	for _, p := range pods.Items {
 		log.Info().Str("pod", p.Name).Str("pod_status_podip", p.Status.PodIP).Send()
-		if contains(prefixs, p.Name) && p.Status.PodIP != "" {
+		lable := p.Labels["app"]
+		if lable == "tracker" && p.Status.PodIP != "" {
 			log.Info().Str("pod", p.Name).Msg("Added into allPods")
 
-			image := ""
+			var image, upCaller, nextCallee string
 			for _, img := range p.Spec.Containers {
 				if strings.Contains(img.Image, "tracker") {
 					image = img.Image
+					for _, env := range img.Env {
+						if env.Name == "UP_CALLER" {
+							upCaller = env.Value
+						}
+						if env.Name == "NEXT_CALLEE" {
+							nextCallee = env.Value
+						}
+					}
 				}
 			}
-
 			pp := &ks.Pod{
-				Namespace: p.Namespace,
-				Name:      p.Name,
-				Image:     image,
-				NodeName:  p.Spec.NodeName,
-				PodIp:     p.Status.PodIP,
+				Namespace:  p.Namespace,
+				Name:       p.Name,
+				Image:      image,
+				NodeName:   p.Spec.NodeName,
+				PodIp:      p.Status.PodIP,
+				UpCaller:   upCaller,
+				NextCallee: nextCallee,
 			}
 			pp.NodeIp = pp.GetNodeIP(pp.NodeName)
 			pp.Zone = pp.GetZone(pp.NodeName)
@@ -112,52 +133,99 @@ func (td *TripDetail) GetInitialPods(from string, ns string, prefixs []string) e
 	}
 
 	//Build possible links as per pods
+	//BO:
+	no := 0
+	log.Info().Int("allPods", len(allPods)).Msgf("The number of pods in %s", ns)
+	for _, pod := range allPods {
 
-	for i := 0; i < len(prefixs); i++ {
-		//add from_nodes
-		if i == 0 {
-			for _, pSrc := range allPods {
-				if strings.HasPrefix(pSrc.Name, prefixs[i]) && (i+1) < len(prefixs) {
-					fsrc := pSrc
-					fP2p := P2p{
-						Number: 0,
-						Source: Point{
-							Ip: from,
-						},
-						Destination: Point{
-							Ip:  fsrc.PodIp,
-							Pod: &fsrc,
-						},
-					}
-					td.Detail = append(td.Detail, fP2p)
-				}
+		// Starting nodes
+		if pod.UpCaller == "" && pod.NextCallee != "" {
+			dstPod := pod
+			fP2p := P2p{
+				Number: no,
+				Source: Point{
+					Ip: from,
+				},
+				Destination: Point{
+					Ip:  dstPod.PodIp,
+					Pod: &dstPod,
+				},
 			}
+			td.Detail = append(td.Detail, fP2p)
+			no += 1
 		}
-		for _, pSrc := range allPods {
-			if strings.HasPrefix(pSrc.Name, prefixs[i]) && (i+1) < len(prefixs) {
-				// add rest of nodes
-				for _, pDst := range allPods {
-					if strings.HasPrefix(pDst.Name, prefixs[i+1]) {
-						src := pSrc
-						dst := pDst
-						p2p := P2p{
-							Number: 0,
+
+		if pod.NextCallee != "" {
+			for _, callee := range strings.Split(pod.NextCallee, ",") {
+				srcPod := pod
+				for _, dstPod := range allPods {
+					if strings.HasPrefix(dstPod.Name, callee) {
+						fP2p := P2p{
+							Number: no,
 							Source: Point{
-								Ip:  src.PodIp,
-								Pod: &src,
+								Ip:  srcPod.PodIp,
+								Pod: &srcPod,
 							},
 							Destination: Point{
-								Ip:  dst.PodIp,
-								Pod: &dst,
+								Ip:  dstPod.PodIp,
+								Pod: &dstPod,
 							},
 						}
-						log.Info().Str("src", pSrc.Name).Str("dst", pDst.Name).Msg("checking out src->dst")
-						td.Detail = append(td.Detail, p2p)
+						td.Detail = append(td.Detail, fP2p)
+						no += 1
 					}
 				}
 			}
 		}
 	}
+	//EO:
+
+	// for i := 0; i < len(prefixs); i++ {
+	// 	//add from_nodes
+	// 	if i == 0 {
+	// 		for _, pSrc := range allPods {
+	// 			if strings.HasPrefix(pSrc.Name, prefixs[i]) && (i+1) < len(prefixs) {
+	// 				fsrc := pSrc
+	// 				fP2p := P2p{
+	// 					Number: 0,
+	// 					Source: Point{
+	// 						Ip: from,
+	// 					},
+	// 					Destination: Point{
+	// 						Ip:  fsrc.PodIp,
+	// 						Pod: &fsrc,
+	// 					},
+	// 				}
+	// 				td.Detail = append(td.Detail, fP2p)
+	// 			}
+	// 		}
+	// 	}
+	// 	for _, pSrc := range allPods {
+	// 		if strings.HasPrefix(pSrc.Name, prefixs[i]) && (i+1) < len(prefixs) {
+	// 			// add rest of nodes
+	// 			for _, pDst := range allPods {
+	// 				if strings.HasPrefix(pDst.Name, prefixs[i+1]) {
+	// 					src := pSrc
+	// 					dst := pDst
+	// 					p2p := P2p{
+	// 						Number: 0,
+	// 						Source: Point{
+	// 							Ip:  src.PodIp,
+	// 							Pod: &src,
+	// 						},
+	// 						Destination: Point{
+	// 							Ip:  dst.PodIp,
+	// 							Pod: &dst,
+	// 						},
+	// 					}
+	// 					log.Info().Str("src", pSrc.Name).Str("dst", pDst.Name).Msg("checking out src->dst")
+	// 					td.Detail = append(td.Detail, p2p)
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }
+
 	log.Info().Interface("return", td).Msg("GetInitialPods()")
 	return nil
 }
@@ -240,11 +308,19 @@ func (td *TripDetail) GoTrip(whoami string, headers map[string]string, clientIp 
 		srcPod.PodIp = headers["x-pod-ip"]
 	}
 
-	if err := td.CallTrip(srcPod, nextCall); err != nil {
-		log.Error().Interface("err", err).Msg("tp.CallTrip")
-		return err
+	//Multiple services to call
+	nextCallServices := strings.Split(nextCall, ",")
+	for _, ncs := range nextCallServices {
+		// TODO: pods namespace/port
+		url := fmt.Sprintf("http://%s.%s.svc.cluster.local:%s/trip/pod", ncs, srcPod.Namespace, "8000")
+
+		if err := td.CallTrip(srcPod, url); err != nil {
+			log.Error().Interface("err", err).Msg("tp.CallTrip")
+			return err
+		}
+		log.Info().Int("p2p_num", len(td.Detail)).Send()
+
 	}
-	log.Info().Int("p2p_num", len(td.Detail)).Send()
 
 	//Get one-way trip latency: A->B / put time into header & calculate
 	start, _ := strconv.ParseInt(headers["x-request-start"], 10, 64)

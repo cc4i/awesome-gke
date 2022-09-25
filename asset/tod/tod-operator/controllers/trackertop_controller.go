@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strings"
 
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -132,7 +133,8 @@ func (r *TrackerTopReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 	for _, tracker := range tto.Spec.Trackers {
 
-		td := buildTrackerDeploy(tracker, tsa, tto.Spec.Redis, tto.Spec.Where)
+		topology := tto.Spec.Graph[tracker.Name]
+		td := buildTrackerDeploy(tracker, tsa, tto.Spec.Redis, topology, tto.Spec.Where)
 		foundDeployment := &appv1.Deployment{}
 		err := r.Get(ctx, types.NamespacedName{Name: td.Name, Namespace: td.Namespace}, foundDeployment)
 		if err != nil && errors.IsNotFound(err) {
@@ -237,7 +239,22 @@ func (r *TrackerTopReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	return ctrl.Result{}, nil
 }
 
-func buildTrackerDeploy(tracker trackerv1.Tracker, tsa *corev1.ServiceAccount, redis trackerv1.ThirdParty, ns string) *appv1.Deployment {
+// func buildTrackerConfig(tto trackerv1.TrackerTop) *corev1.ConfigMap {
+// 	m := make(map[string]string)
+// 	for _, g := range tto.Spec.Graph {
+// 		m[g.Name] = g.Upstream + "::" + strings.Join(g.Downstream, ",")
+// 	}
+
+// 	return &corev1.ConfigMap{
+// 		ObjectMeta: metav1.ObjectMeta{
+// 			Name:      "tracker-config",
+// 			Namespace: tto.Spec.Where,
+// 		},
+// 		Data: m,
+// 	}
+// }
+
+func buildTrackerDeploy(tracker trackerv1.Tracker, tsa *corev1.ServiceAccount, redis trackerv1.ThirdParty, topology trackerv1.Topology, ns string) *appv1.Deployment {
 	terminate := int64(60)
 	td := appv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -294,6 +311,14 @@ func buildTrackerDeploy(tracker trackerv1.Tracker, tsa *corev1.ServiceAccount, r
 											FieldPath: "spec.nodeName",
 										},
 									},
+								},
+								{
+									Name:  "UP_CALLER",
+									Value: topology.Upstream,
+								},
+								{
+									Name:  "NEXT_CALLEE",
+									Value: strings.Join(topology.Downstream, ","),
 								},
 								{
 									Name:  "REDIS_SERVER_ADDRESS",

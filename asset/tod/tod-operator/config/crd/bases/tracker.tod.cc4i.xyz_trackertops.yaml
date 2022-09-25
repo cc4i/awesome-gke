@@ -36,8 +36,7 @@ spec:
             description: TrackerTopSpec defines the desired state of TrackerTop
             properties:
               graph:
-                description: Topology is to define relations between Trackers
-                items:
+                additionalProperties:
                   properties:
                     downstream:
                       items:
@@ -56,7 +55,8 @@ spec:
                   required:
                   - name
                   type: object
-                type: array
+                description: Topology is to define relations between Trackers
+                type: object
               redis:
                 description: Shared Redis for kv store
                 properties:

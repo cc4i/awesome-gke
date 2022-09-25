@@ -2,12 +2,16 @@ package ks
 
 import (
 	"context"
+	"path/filepath"
 	"time"
 
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
 )
 
 // Node Name -> Node
@@ -35,7 +39,11 @@ func (n *Node) GetNodes() error {
 		config, err := rest.InClusterConfig()
 		if err != nil {
 			log.Error().Interface("err", err).Msg("rest.InClusterConfig")
-			return err
+			config, err = clientcmd.BuildConfigFromFlags("", filepath.Join(homedir.HomeDir(), ".kube", "config"))
+			if err != nil {
+				log.Error().Interface("err", err).Msg("clientcmd.BuildConfigFromFlags")
+				return err
+			}
 		}
 		// creates the clientset
 		clientset, err := kubernetes.NewForConfig(config)
