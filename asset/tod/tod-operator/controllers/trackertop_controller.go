@@ -82,7 +82,7 @@ func (r *TrackerTopReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		}
 		if err = r.Create(ctx, tsa); err != nil {
 			l.Error(err, "Unable to create ServiceAccount for Tracker", "tsa", tsa)
-			return ctrl.Result{}, err
+			// return ctrl.Result{}, err
 		}
 		//Role
 		tr := buildRole(tsa)
@@ -93,7 +93,7 @@ func (r *TrackerTopReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		}
 		if err = r.Create(ctx, tr); err != nil {
 			l.Error(err, "Unable to create Role", "tr", tr)
-			return ctrl.Result{}, err
+			// return ctrl.Result{}, err
 		}
 		//RoleBinding
 		trb := buildRoleBinding(tr, tsa)
@@ -104,7 +104,7 @@ func (r *TrackerTopReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		}
 		if err = r.Create(ctx, trb); err != nil {
 			l.Error(err, "Unable to create RoleBinding", "tr", tr)
-			return ctrl.Result{}, err
+			// return ctrl.Result{}, err
 		}
 		//ClusterRole
 		tcr := buildClusterRole(tsa)
@@ -115,18 +115,19 @@ func (r *TrackerTopReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		}
 		if err = r.Create(ctx, tcr); err != nil {
 			l.Error(err, "Unable to create ClusterRole", "tcr", tcr)
-			return ctrl.Result{}, err
+			// return ctrl.Result{}, err
 		}
 		//ClusterRoleBinding
 		tcrb := buildClusterRoleBinding(tcr, tsa)
 		l.Info("Creating ClusterRoleBinding for ServiceAccount", "clusterrolebinding", tcrb.Name)
-		if err := ctrl.SetControllerReference(&tto, tcrb, r.Scheme); err != nil {
-			l.Error(err, "Unable to Set OwnerReferences to ClusterRoleBinding", "tcrb", tcrb)
-			return ctrl.Result{}, err
-		}
+		// !!!cluster-scoped resource must not have a namespace-scoped owner!!!
+		// if err := ctrl.SetControllerReference(&tto, tcrb, r.Scheme); err != nil {
+		// 	l.Error(err, "Unable to Set OwnerReferences to ClusterRoleBinding", "tcrb", tcrb)
+		// 	return ctrl.Result{}, err
+		// }
 		if err = r.Create(ctx, tcrb); err != nil {
 			l.Error(err, "Unable to create RoleBinding", "tr", tr)
-			return ctrl.Result{}, err
+			// return ctrl.Result{}, err
 		}
 
 	}
@@ -148,7 +149,7 @@ func (r *TrackerTopReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 				return ctrl.Result{}, err
 			}
 		} else if err == nil {
-			if foundDeployment.Spec.Replicas != td.Spec.Replicas {
+			if foundDeployment.Spec.Replicas != td.Spec.Replicas || foundDeployment.Spec.Template.Spec.Containers[0].Image != td.Spec.Template.Spec.Containers[0].Image {
 				foundDeployment.Spec.Replicas = td.Spec.Replicas
 				l.Info("Updating Deployment for Tracker", "deployment", foundDeployment.Name)
 				if err = r.Update(ctx, foundDeployment); err != nil {
@@ -568,8 +569,7 @@ func buildClusterRole(tsa *corev1.ServiceAccount) *rbacv1.ClusterRole {
 func buildClusterRoleBinding(tcr *rbacv1.ClusterRole, tsa *corev1.ServiceAccount) *rbacv1.ClusterRoleBinding {
 	return &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      tcr.Name + "-clusterrolebinding",
-			Namespace: tcr.Namespace,
+			Name: tcr.Name + "-clusterrolebinding",
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",

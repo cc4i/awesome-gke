@@ -118,16 +118,19 @@ func (td *TripDetail) GetInitialPods(from string, ns string) error {
 				}
 			}
 			pp := &ks.Pod{
-				Namespace:  p.Namespace,
-				Name:       p.Name,
-				Image:      image,
-				NodeName:   p.Spec.NodeName,
+				Namespace: p.Namespace,
+				Name:      p.Name,
+				Image:     image,
+				NodeName:  p.Spec.NodeName,
+				// NodeIp:     "",
+				// Zone:       "",
 				PodIp:      p.Status.PodIP,
 				UpCaller:   upCaller,
 				NextCallee: nextCallee,
 			}
 			pp.NodeIp = pp.GetNodeIP(pp.NodeName)
 			pp.Zone = pp.GetZone(pp.NodeName)
+			log.Info().Str("pod_name", pp.Name).Str("pod_zone", pp.Zone).Str("pod_ip", pp.PodIp).Send()
 			allPods[p.Name] = *pp
 		}
 	}
