@@ -19,15 +19,16 @@ func init() {
 	RedisServer = os.Getenv("REDIS_SERVER_ADDRESS")
 	RedisServerPassword = os.Getenv("REDIS_SERVER_PASSWORD")
 	if RedisServer == "" {
-		log.Warn().Str("REDIS_SERVER_ADDRESS", RedisServer).
-			Msg("No value for REDIS_SERVER_ADDRESS and failed to connect Redis server.")
+		RedisServer = "127.0.0.1:6379"
+		log.Warn().Str("REDIS_SERVER_ADDRESS", RedisServer).Msg("No value for REDIS_SERVER_ADDRESS, using default: 127.0.0.1:6379")
+	}
+	RedisClient = redis.NewClient(&redis.Options{
+		Addr:     RedisServer,
+		Password: RedisServerPassword,
+	})
+	// re-try connection util 120s
 
-	} else {
-		RedisClient = redis.NewClient(&redis.Options{
-			Addr:     RedisServer,
-			Password: RedisServerPassword,
-		})
-		// re-try connection util 120s
+	go func() {
 		timeout := time.Now().Add(120 * time.Second)
 		for {
 			pong, err := RedisClient.Ping(context.TODO()).Result()
@@ -39,9 +40,9 @@ func init() {
 			if timeout.After(time.Now()) {
 				break
 			}
-
 		}
-	}
+	}()
+
 }
 
 func SaveTd2Redis(id string, buf []byte) error {
