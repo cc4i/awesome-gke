@@ -267,13 +267,13 @@
       return obj;
     }
 
-    function post_tracker(url) {
+    function post_tracker(url, addrs) {
 
       const xhr = new XMLHttpRequest()
       console.log("url->", url)
       xhr.open("POST", url, false)
       xhr.setRequestHeader("Content-Type", "text/plain")
-      xhr.send(document.getElementById("initialModel").value)
+      xhr.send(addrs)
 
       // xhr.onreadystatechange = function() {
         if (xhr.status === 200) {
@@ -314,7 +314,7 @@
       for (let i = 0; i < addrs.length; i++) {
         hosts = addrs[i].split("::")
         initUrl = "http://"+hosts[1]+"/initial/"+hosts[0]
-        let data  =  post_tracker(initUrl);
+        let data  =  post_tracker(initUrl, addrs[i]);
         result.set(hosts[0], data)
         whereMap.set(hosts[1], hosts[0])
       }
@@ -510,6 +510,9 @@
           "linkDataArray": [] //{"from":"Client1", "to":"svc-1-7dfdc5fdff-lg7d2", "width":20},
         }
       myDiagram.model = go.Model.fromJson(model)
+      
+      //Clear cache
+      whereMap.clear()
     }
 
     window.addEventListener('DOMContentLoaded', init);
@@ -521,11 +524,11 @@
       <p>
         <button onclick="clear_history()">Clear History</button>
         <button onclick="call_initial()">Initial diagram</button>
-        <input id="initialUrl" type="text" value="gcp::35.198.228.135" size="100%"/>
+        <!-- <input id="initialUrl" type="text" value="gcp::35.198.228.135" size="100%"/> -->
       </p>
     </div>
     <!-- #33B8FF/bulue #18B84D/green  #F3F01E/yellow-->
-    <textarea id="initialModel" style="border: 1px solid black;  width:98.9%;height:50px; position: relative;">run-tracker::tracker-svc-1-,tracker-svc-2-,tracker-svc-3-,tracker-svc-4-</textarea>
+    <textarea id="initialUrl" style="border: 1px solid black;  width:98.9%;height:50px; position: relative;">gcp::localhost:8000::run-test</textarea>
   </div>
 
   <div id="myDiagramDiv" style="border: 1px solid black; width: 99%; height: 400px; position: relative; -webkit-tap-highlight-color: rgba(255, 255, 255, 0);"><canvas tabindex="0" width="2468" height="1696" style="position: absolute; top: 0px; left: 0px; z-index: 2; user-select: none; touch-action: none; width: 1234px; height: 848px;">This text is displayed if your browser does not support the Canvas HTML element.</canvas><div style="position: absolute; overflow: auto; width: 1234px; height: 848px; z-index: 1;"><div style="position: absolute; width: 1717.84px; height: 1px;"></div></div></div>
@@ -546,7 +549,7 @@
     let url = window.location.href
     const urls = url.split("/")
     console.log(urls)
-    document.getElementById("initialUrl").value="gcp::"+urls[2]
+    //document.getElementById("initialUrl").value="gcp::"+urls[2]
     document.getElementById("trackerUrl").value="http://"+urls[2]+"/trip"
   </script>
 

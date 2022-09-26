@@ -38,7 +38,8 @@ func (n *Node) GetNodes() error {
 		// creates the in-cluster config
 		config, err := rest.InClusterConfig()
 		if err != nil {
-			log.Error().Interface("err", err).Msg("rest.InClusterConfig")
+			log.Error().Interface("err", err).Msg("rest.InClusterConfig at GetNodes()")
+			log.Info().Msg("Outside of cluster and try reading kubeconfig")
 			config, err = clientcmd.BuildConfigFromFlags("", filepath.Join(homedir.HomeDir(), ".kube", "config"))
 			if err != nil {
 				log.Error().Interface("err", err).Msg("clientcmd.BuildConfigFromFlags")

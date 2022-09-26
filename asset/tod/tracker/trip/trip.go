@@ -70,7 +70,7 @@ func (td *TripDetail) GetInitialPods(from string, ns string) error {
 	// creates the in-cluster config
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		log.Error().Interface("err", err).Msg("rest.InClusterConfig")
+		log.Error().Interface("err", err).Msg("rest.InClusterConfig at GetInitialPods()")
 		log.Info().Msg("Outside of cluster and try reading kubeconfig")
 		config, err = clientcmd.BuildConfigFromFlags("", filepath.Join(homedir.HomeDir(), ".kube", "config"))
 		if err != nil {
@@ -180,52 +180,6 @@ func (td *TripDetail) GetInitialPods(from string, ns string) error {
 	}
 	//EO:
 
-	// for i := 0; i < len(prefixs); i++ {
-	// 	//add from_nodes
-	// 	if i == 0 {
-	// 		for _, pSrc := range allPods {
-	// 			if strings.HasPrefix(pSrc.Name, prefixs[i]) && (i+1) < len(prefixs) {
-	// 				fsrc := pSrc
-	// 				fP2p := P2p{
-	// 					Number: 0,
-	// 					Source: Point{
-	// 						Ip: from,
-	// 					},
-	// 					Destination: Point{
-	// 						Ip:  fsrc.PodIp,
-	// 						Pod: &fsrc,
-	// 					},
-	// 				}
-	// 				td.Detail = append(td.Detail, fP2p)
-	// 			}
-	// 		}
-	// 	}
-	// 	for _, pSrc := range allPods {
-	// 		if strings.HasPrefix(pSrc.Name, prefixs[i]) && (i+1) < len(prefixs) {
-	// 			// add rest of nodes
-	// 			for _, pDst := range allPods {
-	// 				if strings.HasPrefix(pDst.Name, prefixs[i+1]) {
-	// 					src := pSrc
-	// 					dst := pDst
-	// 					p2p := P2p{
-	// 						Number: 0,
-	// 						Source: Point{
-	// 							Ip:  src.PodIp,
-	// 							Pod: &src,
-	// 						},
-	// 						Destination: Point{
-	// 							Ip:  dst.PodIp,
-	// 							Pod: &dst,
-	// 						},
-	// 					}
-	// 					log.Info().Str("src", pSrc.Name).Str("dst", pDst.Name).Msg("checking out src->dst")
-	// 					td.Detail = append(td.Detail, p2p)
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
-
 	log.Info().Interface("return", td).Msg("GetInitialPods()")
 	return nil
 }
@@ -311,15 +265,17 @@ func (td *TripDetail) GoTrip(whoami string, headers map[string]string, clientIp 
 	//Multiple services to call
 	nextCallServices := strings.Split(nextCall, ",")
 	for _, ncs := range nextCallServices {
-		// TODO: pods namespace/port
-		url := fmt.Sprintf("http://%s.%s.svc.cluster.local:%s/trip/pod", ncs, srcPod.Namespace, "8000")
+		if ncs != "" {
+			// TODO: pods namespace/port
+			url := fmt.Sprintf("http://%s:%s/trip/pod", ncs, "8000")
 
-		if err := td.CallTrip(srcPod, url); err != nil {
-			log.Error().Interface("err", err).Msg("tp.CallTrip")
-			return err
+			if err := td.CallTrip(srcPod, url); err != nil {
+				log.Error().Interface("err", err).Msg("tp.CallTrip")
+				return err
+			}
+			log.Info().Int("p2p_num", len(td.Detail)).Send()
+
 		}
-		log.Info().Int("p2p_num", len(td.Detail)).Send()
-
 	}
 
 	//Get one-way trip latency: A->B / put time into header & calculate

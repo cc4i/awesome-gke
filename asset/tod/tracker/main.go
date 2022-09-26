@@ -2,15 +2,11 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
-	"time"
-	"tracker/ks"
 	"tracker/tcp"
 	"tracker/trip"
 
@@ -64,7 +60,9 @@ func simpleWs(c *gin.Context) {
 // Get the services list of next call from environment variable
 // eg: svc1,svc2,svc3
 func getNextCall() string {
-	return os.Getenv("NEXT_CALL")
+	nextCallee := os.Getenv("NEXT_CALLEE")
+	log.Info().Str("NEXT_CALLEE", nextCallee).Send()
+	return nextCallee
 }
 
 // API (/trip) - get TripDetail
@@ -99,94 +97,6 @@ func goTrip(c *gin.Context) {
 
 }
 
-// API (/trip) - get TripDetail
-func startTrip(c *gin.Context) {
-	// Initial TripDetail with UUID
-	tp := &trip.TripDetail{
-		Id: uuid.New().String(),
-	}
-
-	// Build source pod from headers if call from pod
-	whoami := c.Param("whoami")
-	srcPod := &ks.Pod{}
-	if whoami == "pod" {
-		srcPod.Name = c.Request.Header.Get("x-pod-name")
-		srcPod.Namespace = c.Request.Header.Get("x-pod-namespace")
-		srcPod.NodeName = c.Request.Header.Get("x-node-name")
-		srcPod.NodeIp = c.Request.Header.Get("x-node-ip")
-		srcPod.Zone = c.Request.Header.Get("x-zone")
-		srcPod.PodIp = c.Request.Header.Get("x-pod-ip")
-
-	}
-	if err := tp.CallTrip(srcPod, getNextCall()); err != nil {
-		log.Error().Interface("err", err).Msg("tp.CallTrip")
-	}
-	log.Info().Int("p2p_num", len(tp.Detail)).Send()
-
-	//Get one-way trip latency: A->B / put time into header & calculate
-	start, _ := strconv.ParseInt(c.Request.Header.Get("x-request-start"), 10, 64)
-	end := time.Now().UnixNano() / int64(time.Millisecond)
-	// One time call and latency is 0
-	if c.Request.Header.Get("x-request-start") == "" {
-		start = end
-	}
-	// Get remote client IP if it's first call
-	cltIp := c.Request.Header.Get("x-pod-ip")
-	if cltIp == "" {
-		//TODO: Get external IP when call from inside Pod/? Call API?
-		cltIp = c.ClientIP()
-	}
-
-	//Source
-	src := trip.Point{
-		Ip: cltIp,
-	}
-	if whoami == "pod" {
-		src.Pod = srcPod
-	}
-
-	wp := trip.Point{
-		Ip: whereami,
-	}
-	var swp trip.Point
-	if c.Request.Header.Get("x-pod-ip") == "" {
-		fp2p := trip.P2p{
-			Number:      0,
-			Source:      src,
-			Destination: wp,
-		}
-		tp.Detail = append(tp.Detail, fp2p)
-		swp = wp
-	} else {
-		swp = src
-	}
-
-	//Destination
-	dstPod := &ks.Pod{}
-	p2p := trip.P2p{
-		Number: len(tp.Detail),
-		Source: swp,
-		Destination: trip.Point{
-			Ip:  dstPod.GetLocalIP(),
-			Pod: dstPod.BuildPod(),
-		},
-		Method:     c.Request.Method,
-		RequestURI: c.Request.RequestURI,
-		Response:   dstPod.BuildResponse(),
-		Latency:    end - start,
-	}
-	tp.Detail = append(tp.Detail, p2p)
-	log.Info().Interface("return", tp.Detail).Msg("startTrip()")
-	// Save to redis, only once
-	if whoami != "pod" {
-		buf, _ := json.Marshal(tp.Detail)
-		if err := trip.SaveTd2Redis(tp.Id, buf); err != nil {
-			log.Error().Interface("error", err).Msg("fail to trip.SaveTd2Redis()")
-		}
-	}
-	c.JSON(http.StatusOK, tp.Detail)
-}
-
 // API (/initial) - get all pods as per request
 func getInitialPods(c *gin.Context) {
 	//Get initial cloud provider & namespace, then read /CRD::TrackerTop/ inside the namespace
@@ -198,8 +108,9 @@ func getInitialPods(c *gin.Context) {
 	}
 	log.Info().Str("request_str", string(buf)).Send()
 
+	//reqeust string format : <provider>::<host:port>::<namespace>
 	strs := strings.Split(string(buf), "::")
-	ns := strs[0]
+	ns := strs[2]
 
 	// Initial TripDetail with UUID
 	tp := &trip.TripDetail{
@@ -276,10 +187,8 @@ func echo(c *gin.Context) {
 func router(ctx context.Context, r *gin.Engine) *gin.Engine {
 	log.Info().Interface("ctx", ctx).Msg("context.Context pairs")
 	r.POST("/initial/:from", getInitialPods)
-	r.GET("/trip", startTrip)
-	r.GET("/trip/:whoami", startTrip)
-	r.GET("/v2/trip", goTrip)
-	r.GET("/v2/trip/:whoami", goTrip)
+	r.GET("/trip", goTrip)
+	r.GET("/trip/:whoami", goTrip)
 	r.GET("/all-trips", allTrips)
 	r.GET("/clear-trips", clearTrips)
 
