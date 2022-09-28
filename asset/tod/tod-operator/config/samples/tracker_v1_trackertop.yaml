@@ -3,7 +3,7 @@ kind: TrackerTop
 metadata:
   name: trackertop-sample
 spec:
-  where: "run-test"
+  where: "run-out"
   trackers:
     - name: front-svc1
       image: us-central1-docker.pkg.dev/play-with-anthos-340801/jigaree/tracker:v0.11-15-g19905f0-dirty

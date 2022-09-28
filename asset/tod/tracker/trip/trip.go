@@ -1,12 +1,15 @@
 package trip
 
 import (
+	"bytes"
 	"context"
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -29,14 +32,17 @@ type TripDetail struct {
 
 // Single call source -> destination
 type P2p struct {
-	Number      int    `json:"number"`
-	Source      Point  `json:"source"`
-	Destination Point  `json:"destination"`
-	Method      string `json:"method,omitempty"`
-	RequestURI  string `json:"request_uri,omitempty"`
-	Request     string `json:"request,omitempty"`
-	Response    string `json:"response,omitempty"`
-	Latency     int64  `json:"latency,omitempty"`
+	Number             int    `json:"number"`
+	Source             Point  `json:"source"`
+	Destination        Point  `json:"destination"`
+	Method             string `json:"method,omitempty"`
+	RequestURI         string `json:"request_uri,omitempty"`
+	Request            string `json:"request,omitempty"`
+	RequestPacketSize  int32  `json:"requestPacketSize,omitempty"`
+	Response           string `json:"response,omitempty"`
+	ResponsePacketSize int32  `json:"responsePacketSize,omitempty"`
+	// Single trip latency, unit is Millisecond
+	Latency int64 `json:"latency,omitempty"`
 }
 
 // Point for source/destination
@@ -52,6 +58,7 @@ type TripInterface interface {
 	GoTrip(whoami string, headers map[string]string, clientIp string, reqMethod string, reqUri string, nextCall string, whereami string) error
 }
 
+// Check if array includes specific string
 func contains(s []string, str string) bool {
 
 	for _, v := range s {
@@ -64,10 +71,20 @@ func contains(s []string, str string) bool {
 	return false
 }
 
+// Get actual size of variable
+func getRealSizeOf(v interface{}) int {
+	b := new(bytes.Buffer)
+	if err := gob.NewEncoder(b).Encode(v); err != nil {
+		log.Error().Interface("err", err).Send()
+		return 0
+	}
+	return b.Len()
+}
+
 // Get intial relations of pods under specificed namespace & call chain
 func (td *TripDetail) GetInitialPods(from string, ns string) error {
 
-	// creates the in-cluster config
+	// Creates the in-cluster config
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		log.Error().Interface("err", err).Msg("rest.InClusterConfig at GetInitialPods()")
@@ -78,7 +95,7 @@ func (td *TripDetail) GetInitialPods(from string, ns string) error {
 			return err
 		}
 	}
-	// creates the clientset
+	// Creates the clientset
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		log.Error().Interface("err", err).Msg("kubernetes.NewForConfig")
@@ -187,7 +204,10 @@ func (td *TripDetail) GetInitialPods(from string, ns string) error {
 	return nil
 }
 
-// Inter-call API (/trip) and return TripDetail
+// Call API "/trip" with Pods' infomation embeded into HTTP Header, process response and add into TripDetail
+//
+// kp - The Pod where the invoking was from
+// url - The URL of target service
 func (td *TripDetail) CallTrip(kp *ks.Pod, url string) error {
 
 	log.Info().Str("url", url).Send()
@@ -210,10 +230,10 @@ func (td *TripDetail) CallTrip(kp *ks.Pod, url string) error {
 			log.Error().Interface("err", err).Msg("client.Do")
 			return err
 		}
-		log.Info().Str("http_code", res.Status).Msg("return code from " + url)
+		log.Info().Str("http_code", res.Status).Msg("Return HTTP_CODE when GET " + url)
 		buf, _ := ioutil.ReadAll(res.Body)
-		log.Info().Int("buf_num", len(buf)).Send()
-		log.Info().Interface("buf", buf).Send()
+		log.Info().Int("buf_size", len(buf)).Int("unsafe_sizeof", int(reflect.TypeOf(buf).Size())).Send()
+		log.Info().Interface("call_trip_response", buf).Send()
 		var p2ps []P2p
 		if err = json.Unmarshal(buf, &p2ps); err != nil {
 			log.Error().Interface("err", err).Msg("json.Unmarshal")
@@ -229,29 +249,15 @@ func (td *TripDetail) CallTrip(kp *ks.Pod, url string) error {
 	return nil
 }
 
-func (td *TripDetail) TripHistory() error {
-	if maps, err := QueryAllTds4Redis(); err != nil {
-		return err
-	} else {
-
-		for _, val := range maps {
-			var ttd []P2p
-			json.Unmarshal([]byte(val), &ttd)
-			td.Detail = append(td.Detail, ttd...)
-		}
-	}
-	return nil
-}
-
 // Go through trip chain/call one by one and return all data
 //
-// whoami - indicate for origal call or call from Pods
-// headers - all headers from HTTP request
-// clientIp - remote ip of client
-// reqMethod - request method of HTTP
-// reqUri - URL of http call
-// nextCall - URL of next http call
-// whereami - where the Tracker was deployed
+// whoami - Indicate the origal call from "pod" or somewhere else (eg: gcp, aws)
+// headers - All headers from HTTP request
+// clientIp - Remote ip of client
+// reqMethod - Request method of HTTP
+// reqUri - Request URL
+// nextCall - The list of Tracker services' name, eg: svc1,svc2,svc3
+// whereami - Where the Tracker was deployed
 func (td *TripDetail) GoTrip(whoami string, headers map[string]string, clientIp string, reqMethod string, reqUri string, nextCall string, whereami string) error {
 
 	// Build source pod from headers if call from pod
@@ -322,18 +328,33 @@ func (td *TripDetail) GoTrip(whoami string, headers map[string]string, clientIp 
 			Ip:  dstPod.GetLocalIP(),
 			Pod: dstPod.BuildPod(),
 		},
-		Method:     reqMethod,
-		RequestURI: reqUri,
-		Response:   dstPod.BuildResponse(),
-		Latency:    end - start,
+		Method:             reqMethod,
+		RequestURI:         reqUri,
+		ResponsePacketSize: int32(getRealSizeOf(td.Detail)),
+		Latency:            end - start,
 	}
 	td.Detail = append(td.Detail, p2p)
-	log.Info().Interface("return", td.Detail).Msg("startTrip()")
+	log.Info().Interface("return", td.Detail).Msg("GoTrip()")
 	// Save to redis, only once
 	if whoami != "pod" {
 		buf, _ := json.Marshal(td.Detail)
 		if err := SaveTd2Redis(td.Id, buf); err != nil {
 			log.Error().Interface("error", err).Msg("fail to trip.SaveTd2Redis()")
+		}
+	}
+	return nil
+}
+
+// Get all round trip infor between Trackers from Redis
+func (td *TripDetail) TripHistory() error {
+	if maps, err := QueryAllTds4Redis(); err != nil {
+		return err
+	} else {
+
+		for _, val := range maps {
+			var ttd []P2p
+			json.Unmarshal([]byte(val), &ttd)
+			td.Detail = append(td.Detail, ttd...)
 		}
 	}
 	return nil
