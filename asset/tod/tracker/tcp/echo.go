@@ -10,7 +10,7 @@ import (
 	"github.com/panjf2000/gnet/v2"
 )
 
-type echoServer struct {
+type EchoServer struct {
 	gnet.BuiltinEventEngine
 
 	eng       gnet.Engine
@@ -19,13 +19,13 @@ type echoServer struct {
 	sessions  map[string]string
 }
 
-func (es *echoServer) OnBoot(eng gnet.Engine) gnet.Action {
+func (es *EchoServer) OnBoot(eng gnet.Engine) gnet.Action {
 	es.eng = eng
 	log.Info().Msgf("TCP Server with multi-core=%t is listening on %s\n", es.multicore, es.addr)
 	return gnet.None
 }
 
-func (es *echoServer) OnOpen(c gnet.Conn) (out []byte, action gnet.Action) {
+func (es *EchoServer) OnOpen(c gnet.Conn) (out []byte, action gnet.Action) {
 	remote := c.RemoteAddr()
 	log.Info().Msgf("Connection from %s", remote.String())
 	if es.sessions == nil {
@@ -35,7 +35,7 @@ func (es *echoServer) OnOpen(c gnet.Conn) (out []byte, action gnet.Action) {
 	return []byte{}, gnet.None
 }
 
-func (es *echoServer) OnTraffic(c gnet.Conn) gnet.Action {
+func (es *EchoServer) OnTraffic(c gnet.Conn) gnet.Action {
 	buf, _ := c.Next(-1)
 	log.Info().Str("msg", string(buf)).Msg("Received message")
 	if string(buf) == "bye\r\n" {
@@ -68,7 +68,8 @@ func (es *echoServer) OnTraffic(c gnet.Conn) gnet.Action {
 	return gnet.None
 }
 
-func Run(port string) {
-	echo := &echoServer{addr: fmt.Sprintf("tcp://:%s", port), multicore: true}
+func Run(port string) *EchoServer {
+	echo := &EchoServer{addr: fmt.Sprintf("tcp://:%s", port), multicore: true}
 	log.Fatal().Err(gnet.Run(echo, echo.addr, gnet.WithMulticore(true)))
+	return echo
 }

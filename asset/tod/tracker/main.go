@@ -6,7 +6,10 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
+	"time"
 	"tracker/tcp"
 	"tracker/trip"
 
@@ -248,6 +251,18 @@ func main() {
 	//Start TCP backend
 	go tcpSrv()
 	//Start HTTP backend
-	httpSrv()
+	go httpSrv()
+
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
+
+	s := <-shutdown
+	log.Info().Msgf("Signal is %s", s)
+	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer handleTermination(cancel)
+
+}
+
+func handleTermination(cancel context.CancelFunc) {
 
 }
