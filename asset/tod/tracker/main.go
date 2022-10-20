@@ -239,6 +239,10 @@ func tcpSrv() {
 
 }
 
+func gameSrv() {
+	tcp.RunBoringGame()
+}
+
 func main() {
 	whereami = "gcp"
 	//Configure zerolog
@@ -252,6 +256,8 @@ func main() {
 	go tcpSrv()
 	//Start HTTP backend
 	go httpSrv()
+	//Start boring Game Server based on Agones
+	go gameSrv()
 
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)

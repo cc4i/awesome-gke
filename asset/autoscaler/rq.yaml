@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: gcp-critical-pods
+  namespace: default
+  labels:
+    addonmanager.kubernetes.io/mode: Reconcile
+spec:
+  hard:
+    pods: "1000000000"
+  scopeSelector:
+    matchExpressions:
+    - operator : In
+      scopeName: PriorityClass
+      values: ["system-node-critical", "system-cluster-critical"]

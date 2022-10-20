@@ -60,7 +60,7 @@ func (es *EchoServer) OnTraffic(c gnet.Conn) gnet.Action {
 	node := os.Getenv("POD_NODE_NAME")
 	pod := os.Getenv("POD_NAME")
 	ver := os.Getenv("TRACKER_VERSION")
-	rs := fmt.Sprintf("[%s]:[%s] in [%s] has received: [%s]", pod, ver, node, buf)
+	rs := fmt.Sprintf("ACK ->[%s]:[%s] in [%s] has received: [%s]", pod, ver, node, buf)
 	//
 
 	c.Write([]byte(rs))

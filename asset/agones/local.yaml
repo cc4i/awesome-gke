@@ -1,0 +1,20 @@
+apiVersion: "agones.dev/v1"
+kind: GameServer
+metadata:
+  name: my-local-server
+  annotations:
+    # Causes Agones to register your local game server at 192.1.1.2, replace with your server's IP address.
+    agones.dev/dev-address: "172.19.74.17"
+spec:
+  ports:
+  - name: default
+    portPolicy: Static
+    hostPort: 17654
+    containerPort: 17654
+  # The following is ignored but required due to validation.
+  template:
+    spec:
+      containers:
+      - name: simple-game-server
+        image: gcr.io/agones-images/simple-game-server:0.14
+
