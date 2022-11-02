@@ -1,0 +1,59 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: golang-gcs-1
+  labels:
+    app: golang-gcs-1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: golang-gcs-1
+  template:
+    metadata:
+      labels:
+        app: golang-gcs-1
+    spec:
+      containers:
+      - name: golang
+        image: golang:latest
+        command: ["/bin/sh"]
+        args: ["-c", "while true; do echo live; sleep 600;done"]
+        volumeMounts:
+        - mountPath: /tmp1
+          name: mygcs
+      volumes:
+      - name: mygcs
+        persistentVolumeClaim:
+          claimName: csi-gcs-pvc
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: golang-gcs-2
+  labels:
+    app: golang-gcs-2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: golang-gcs-2
+  template:
+    metadata:
+      labels:
+        app: golang-gcs-2
+    spec:
+      containers:
+      - name: golang
+        image: golang:latest
+        command: ["/bin/sh"]
+        args: ["-c", "while true; do echo live; sleep 600;done"]
+        volumeMounts:
+        - mountPath: /tmp1
+          name: mygcs
+      volumes:
+      - name: mygcs
+        persistentVolumeClaim:
+          claimName: csi-gcs-pvc

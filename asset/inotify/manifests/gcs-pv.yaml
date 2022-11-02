@@ -1,0 +1,39 @@
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: csi-gcs-test-sc
+provisioner: gcs.csi.ofek.dev
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: csi-gcs-pv
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 5Gi
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: csi-gcs-test-sc
+  csi:
+    driver: gcs.csi.ofek.dev
+    volumeHandle: csi-gcs
+    nodePublishSecretRef:
+      name: csi-gcs-secret
+      namespace: default
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: csi-gcs-pvc
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: csi-gcs-test-sc

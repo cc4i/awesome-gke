@@ -1,0 +1,59 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: golang-1
+  labels:
+    app: golang-1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: golang-1
+  template:
+    metadata:
+      labels:
+        app: golang-1
+    spec:
+      containers:
+      - name: golang
+        image: golang:latest
+        command: ["/bin/sh"]
+        args: ["-c", "while true; do echo live; sleep 600;done"]
+        volumeMounts:
+        - mountPath: /tmp1
+          name: mypvc
+      volumes:
+      - name: mypvc
+        persistentVolumeClaim:
+          claimName: podpvc2
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: golang-2
+  labels:
+    app: golang-2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: golang-2
+  template:
+    metadata:
+      labels:
+        app: golang-2
+    spec:
+      containers:
+      - name: golang
+        image: golang:latest
+        command: ["/bin/sh"]
+        args: ["-c", "while true; do echo live; sleep 600;done"]
+        volumeMounts:
+        - mountPath: /tmp1
+          name: mypvc
+      volumes:
+      - name: mypvc
+        persistentVolumeClaim:
+          claimName: podpvc2
