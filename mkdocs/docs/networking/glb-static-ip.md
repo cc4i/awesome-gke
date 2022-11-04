@@ -11,5 +11,5 @@ How to use Google Kubernetes Engine (GKE) to expose your application to the inte
 
 
 ## References
-https://cloud.google.com/kubernetes-engine/docs/tutorials/configuring-domain-name-static-ip
+- https://cloud.google.com/kubernetes-engine/docs/tutorials/configuring-domain-name-static-ip
 

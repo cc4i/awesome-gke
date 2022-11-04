@@ -9,6 +9,40 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+type S2Redis struct {
+	RedisServer         string
+	RedisServerPassword string
+	*redis.Client
+}
+
+type S2RedisInterface interface {
+	Connect() error
+	SaveTripDetail(id string, buf []byte) error
+	TripDetail(id string) ([]byte, error)
+	AllTripDetail() ([]byte, error)
+	ClearTripDetail() error
+}
+
+func (s2r *S2Redis) Connect() error {
+	return nil
+}
+
+func (s2r *S2Redis) SaveTripDetail(id string, buf []byte) error {
+	panic("not implemented") // TODO: Implement
+}
+
+func (s2r *S2Redis) TripDetail(id string) ([]byte, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (s2r *S2Redis) AllTripDetail() ([]byte, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (s2r *S2Redis) ClearTripDetail() error {
+	panic("not implemented") // TODO: Implement
+}
+
 var (
 	RedisServer         string
 	RedisServerPassword string

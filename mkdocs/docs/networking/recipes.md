@@ -1,6 +1,11 @@
 
-# 
-## Network recipes of GKE from Google Cloud
+#
 
-The (repository)[https://github.com/GoogleCloudPlatform/gke-networking-recipes] contains various use cases and examples of GKE Networking. For each of the use-cases there are full YAML examples that show how and when these GKE capabilities should be used.
+## Description
+
+All kinds of [network recipes for GKE](https://github.com/GoogleCloudPlatform/gke-networking-recipes) from offical Google Cloud repositories, excellent examples align with those use cases, which demonstrate how and when those GKE capabilities should be used. 
+
+## References
+
+- [GKE Networking Recipes](https://github.com/GoogleCloudPlatform/gke-networking-recipes)
 
