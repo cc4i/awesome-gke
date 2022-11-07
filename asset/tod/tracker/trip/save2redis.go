@@ -24,7 +24,7 @@ type S2RedisInterface interface {
 }
 
 func (s2r *S2Redis) Connect() error {
-	return nil
+	panic("not implemented") // TODO: Implement
 }
 
 func (s2r *S2Redis) SaveTripDetail(id string, buf []byte) error {
