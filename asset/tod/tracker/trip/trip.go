@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strconv"
@@ -23,6 +24,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 )
+
+var s2Redis *S2Redis
 
 // Invoking chain with reverse order
 type TripDetail struct {
@@ -55,12 +58,23 @@ type TripInterface interface {
 	GetInitialPods(from string, ns string) error
 	CallTrip(kp *ks.Pod, url string) error
 	TripHistory() error
+	ClearTripHistory() error
 	GoTrip(whoami string, headers map[string]string, clientIp string, reqMethod string, reqUri string, nextCall string, whereami string) error
+}
+
+// Initial
+func init() {
+	rsd := os.Getenv("REDIS_SERVER_ADDRESS")
+	rsp := os.Getenv("REDIS_SERVER_PASSWORD")
+	s2Redis = &S2Redis{
+		Server:   rsd,
+		Password: rsp,
+	}
+	s2Redis.Connect()
 }
 
 // Check if array includes specific string
 func contains(s []string, str string) bool {
-
 	for _, v := range s {
 		if strings.HasPrefix(str, v) {
 			log.Debug().Str("str", str).Str("prefix", v).Msg("true")
@@ -338,7 +352,7 @@ func (td *TripDetail) GoTrip(whoami string, headers map[string]string, clientIp 
 	// Save to redis, only once
 	if whoami != "pod" {
 		buf, _ := json.Marshal(td.Detail)
-		if err := SaveTd2Redis(td.Id, buf); err != nil {
+		if err := s2Redis.SaveTripDetail(td.Id, buf); err != nil {
 			log.Error().Interface("error", err).Msg("fail to trip.SaveTd2Redis()")
 		}
 	}
@@ -347,10 +361,9 @@ func (td *TripDetail) GoTrip(whoami string, headers map[string]string, clientIp 
 
 // Get all round trip infor between Trackers from Redis
 func (td *TripDetail) TripHistory() error {
-	if maps, err := QueryAllTds4Redis(); err != nil {
+	if maps, err := s2Redis.AllTripDetail(); err != nil {
 		return err
 	} else {
-
 		for _, val := range maps {
 			var ttd []P2p
 			json.Unmarshal([]byte(val), &ttd)
@@ -358,4 +371,8 @@ func (td *TripDetail) TripHistory() error {
 		}
 	}
 	return nil
+}
+
+func (td *TripDetail) ClearTripHistory() error {
+	return s2Redis.ClearTripDetail()
 }

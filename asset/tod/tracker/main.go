@@ -148,8 +148,14 @@ func allTrips(c *gin.Context) {
 
 // Clear trip history in redis
 func clearTrips(c *gin.Context) {
-	trip.ClearHistory()
-	c.String(http.StatusOK, "Cleared")
+	// trip.S2Redis
+	tp := &trip.TripDetail{}
+	if err := tp.ClearTripHistory(); err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+	} else {
+		c.String(http.StatusOK, "Cleared")
+	}
+
 }
 
 // Test panic and reboot Pod
