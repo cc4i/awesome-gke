@@ -1,6 +1,6 @@
 #
 
-## Checklist for your GKE
+## Checklist for GKE
 
 - [X] Have a high level architecture of your applications and map them into a Kubernetes cluster, think about how they're going to deploy and run. 
 
