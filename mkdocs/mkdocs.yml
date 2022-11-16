@@ -1,5 +1,5 @@
 site_name: Kubernetes on Google Cloud
-site_url: https://github.com/cc4i/multi-k8s/
+site_url: https://github.com/cc4i/awesome-gke/
 nav:
   - Home: 'index.md'
   - 'General':
