@@ -56,37 +56,77 @@ export default function Home() {
   const [game, setGame] = React.useState<Game>({playerResults: new Map()})
   const [pb, setPb] = React.useState<DiceState[]>([])
   const [pm, setPm] = React.useState<DiceState[]>([])
+  const [gstart, setGstart] = React.useState<boolean>()
+  const [gend, setGend] = React.useState<boolean>()
+  const [upPlayer, setUpPlayer] = React.useState<Player>({id: uuidv4(), name: "Robot", avatarUrl: "/robot.png"})
+  const [downPlayer, setDownUpPlayer] = React.useState<Player>({id: uuidv4(), name: "Chuan", avatarUrl: "/coolman1.png"})
 
   // TODO: Initial a game, need to update after integrating with game server
   function initGames() {
 
-    let playerBot = {id: uuidv4(), name: "Robot", avatarUrl: "/robot.png"}
-    let playerMan = {id: uuidv4(), name: "Chuan", avatarUrl: "/coolman1.png"}
+    // setUpPlayer( {id: uuidv4(), name: "Robot", avatarUrl: "/robot.png"})
+    // setDownUpPlayer({id: uuidv4(), name: "Chuan", avatarUrl: "/coolman1.png"})
 
-    game.playerResults.set(playerBot.id, {selectionNumber: 1, selections: new Map(), total: 0})
-    game.playerResults.set(playerMan.id, {selectionNumber: 1, selections: new Map(), total: 0})
-    game.currentPlayerId = playerMan.id
-    let ngm = {
-      start: new Date(),
-      playerResults: game.playerResults,
-      //default starting with playerMan
-      currentPlayerId: playerMan.id
+    console.log("upPlayer => ", upPlayer)
+    console.log("downPlayer => ", downPlayer)
+
+    if (upPlayer != undefined && downPlayer != undefined) {
+      game.playerResults.set(upPlayer.id, {selectionNumber: 1, selections: new Map(), total: 0})
+      game.playerResults.set(downPlayer.id, {selectionNumber: 1, selections: new Map(), total: 0})
+      game.currentPlayerId = downPlayer.id
+      let ngm = {
+        start: new Date(),
+        playerResults: game.playerResults,
+        //default starting with playerMan
+        currentPlayerId: downPlayer.id
+      }
+      setGame(ngm)
     }
-    setGame(ngm)
+
+    //Set status
+    console.log("BO: gstart=> ", gstart, " gend=>", gend)
+    setGstart(true)
+    setGend(false)
+    console.log("EO: gstart=> ", gstart, " gend=>", gend)
+
   }
 
   function reload() {
     Router.reload();
+    console.log("BO: gstart=> ", gstart, " gend=>", gend)
+    console.log("EO: gstart=> ", gstart, " gend=>", gend)
+
   }
 
   function getRandomInt(min:number , max:number) : number{
     min = Math.ceil(min);
     max = Math.floor(max);
     return Math.floor(Math.random() * (max - min + 1)) + min; 
+
+  }
+
+  function switchTurn() {
+    console.log("Switch the turn to opponent player...")
+    if (game.currentPlayerId != undefined) {
+      // for (var id in game.playerResults.keys() ) {
+      //   if (id != game.currentPlayerId) {
+      //     game.currentPlayerId = id
+      //     setGame(game)
+      //     console.log("opponent player is =>", game.currentPlayerId==upPlayer.id?"Up":"Down", "id => ", game.currentPlayerId)
+      //     break
+      //   }
+      game.currentPlayerId=(game.currentPlayerId==upPlayer.id?downPlayer.id:upPlayer.id)
+      console.log("opponent player is =>", game.currentPlayerId==upPlayer.id?"Up":"Down", "id => ", game.currentPlayerId)
+      // }
+      // game.playerResults.forEach((score, playerId)=>{
+        
+      // })
+      setGame(game)
+    }
+
   }
 
   function rollOneDice(ds: DiceState) {
-    console.log("what->",ds)
     if (ds.isOnBoard) {
       let val = getRandomInt(1,6)
       var dsx = {
@@ -114,12 +154,14 @@ export default function Home() {
         case "dice6":
           setD6(dsx);
           break;
-      
       }
+      console.log("Roll the dice => ",dsx)
     }
+    
   }
 
   function rollDice() {
+    console.log("player is =>", game.currentPlayerId==upPlayer.id?"Up":"Down", "id => ", game.currentPlayerId)
     console.log("Roll all dices")
     //Before roll dices
     let pid = game.currentPlayerId
@@ -134,14 +176,25 @@ export default function Home() {
     }
     setGame(game)
     
-
     //Dices
-    rollOneDice(d1)
-    rollOneDice(d2)
-    rollOneDice(d3)
-    rollOneDice(d4)
-    rollOneDice(d5)
-    rollOneDice(d6)
+    for (var x of [d1, d2, d3, d4, d5, d6]) {
+      if (x.isOnBoard) {
+        rollOneDice(x)
+      }
+    }
+
+    // Check if it's turn for other player
+    let swt = true
+    for (var x of [d1, d2, d3, d4, d5, d6]) {
+        if (x.isOnBoard) {
+          if (x.value==1 || x.value==5) {
+            swt = false
+          }
+        }
+      }
+    if (swt) {
+      switchTurn()
+    }
   }
 
   const moveDice = (ds: DiceState) => () => {
@@ -203,7 +256,12 @@ export default function Home() {
           da.push({id: "-", isOnBoard: false, imageUrl: ""})
         })
         console.log("da =>",da)
-        setPm(da)
+        if (game.currentPlayerId == upPlayer?.id) {
+          setPb(da)
+        } else {
+          setPm(da)
+        }
+        
       }
       
     }
@@ -299,6 +357,21 @@ export default function Home() {
             <Grid>
               <Input readOnly labelLeft="Score" placeholder="0" />
             </Grid>
+            <Grid>
+              <Grid.Container>
+                {
+                  pb.map((d, idx) => {
+                    if (d.id == "-") {
+                      return <Avatar key={uuidv4()} src={d.imageUrl} size="xl" squared zoomed bordered onClick={ moveDice(d)} /> && <Spacer key={uuidv4()} y={2}></Spacer>
+                    } else {
+                      return <Avatar key={uuidv4()} src={d.imageUrl} size="xl" squared zoomed bordered onClick={ moveDice(d)} />
+                    }
+                    
+                  })
+                }
+                      
+              </Grid.Container> 
+            </Grid>
         </Grid>
         <Grid xs={12} css={{ alignItems: 'center', }}>
           <Grid.Container gap={2} xs={12} css={{
@@ -338,6 +411,7 @@ export default function Home() {
                 bordered
                 ghost
                 onPress={rollDice}
+                disabled={!gstart}
                 >Roll Dice</Button>
               </Grid>
               <Grid>
@@ -350,6 +424,7 @@ export default function Home() {
                 }}
                 bordered
                 ghost
+                disabled={!gstart}
                 >Bank Score</Button>
               </Grid>
             </Grid.Container>
