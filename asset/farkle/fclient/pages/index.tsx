@@ -250,6 +250,10 @@ export default function Home() {
 
   const moveDice = (ds: DiceState) => () => {
     console.log("Move dice => ", ds)
+    if (!game.isStart) {
+      console.log("Game is not started, do nothing!")
+      return
+    }
     if (ds.isFixed) {
       console.log("Do nothing with fixed dice => ", ds.id)
       return
@@ -391,6 +395,9 @@ export default function Home() {
                   squared
                   size="xl"
                   src="/robot.png"
+                  bordered={game.currentPlayerId==upPlayer.id}
+                  borderWeight="extrabold"
+                  color="gradient"
                 />
               </Badge>
             </Grid>
@@ -477,6 +484,9 @@ export default function Home() {
                   squared
                   size="xl"
                   src="/coolman1.png"
+                  bordered={game.currentPlayerId==downPlayer.id}
+                  borderWeight="extrabold"
+                  color="gradient"
                 />
               </Badge>
             </Grid>
