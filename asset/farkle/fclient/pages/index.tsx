@@ -2,7 +2,7 @@ import Head from 'next/head'
 import Image from 'next/image'
 // import styles from '../styles/Home.module.css'
 import {Container, Grid, Card, Text, Row, Button, Table, Input, Badge, Avatar, Spacer, Textarea} from '@nextui-org/react';
-import React from 'react';
+import React, { useEffect } from 'react';
 import {v4 as uuidv4} from 'uuid';
 import Router from 'next/router'
 
@@ -20,7 +20,8 @@ interface DiceState {
   value?: number
 
   withWho?: Player
-  withPlayer?: boolean
+  withUpPlayer?: boolean
+  withDownPlayer?: boolean
   isFixed?: boolean
 
   isOnBoard: boolean
@@ -39,62 +40,72 @@ interface Score {
 interface Game {
   start?: Date
   end?: Date
+  isStart?: boolean
+  isEnd?: boolean
   currentPlayerId?: string
   // key -> player id
   playerResults: Map<string,Score>
 }
 
+interface PickedDices {
+  who: string
+  dices: DiceState[]
+}
+
+// ////////declare global/////////
+// Six dices 1-6
+var Dice1:DiceState = {id: "dice1", isOnBoard: true, value: 1, imageUrl:"/dice1.png"}
+var Dice2:DiceState = {id: "dice2", isOnBoard: true, value: 2, imageUrl:"/dice2.png"}
+var Dice3:DiceState = {id: "dice3", isOnBoard: true, value: 3, imageUrl:"/dice3.png"}
+var Dice4:DiceState = {id: "dice4", isOnBoard: true, value: 4, imageUrl:"/dice4.png"}
+var Dice5:DiceState = {id: "dice5", isOnBoard: true, value: 5, imageUrl:"/dice5.png"}
+var Dice6:DiceState = {id: "dice6", isOnBoard: true, value: 6, imageUrl:"/dice6.png"}
+// The game
+var TheGame:Game = {playerResults: new Map()}
+// 2 Players
+var UpPlayer:Player = {id: uuidv4(), name: "Robot", avatarUrl: "/robot.png"}
+var DownPlayer:Player = {id: uuidv4(), name: "Chuan", avatarUrl: "/coolman1.png"}
+//
+
 // Main
 export default function Home() {
-
-  const [d1, setD1] = React.useState<DiceState>({id: "dice1", isOnBoard: true, value: 1, imageUrl:"/dice1.png"});
-  const [d2, setD2] = React.useState<DiceState>({id: "dice2", isOnBoard: true, value: 2, imageUrl:"/dice2.png"});
-  const [d3, setD3] = React.useState<DiceState>({id: "dice3", isOnBoard: true, value: 3, imageUrl:"/dice3.png"});
-  const [d4, setD4] = React.useState<DiceState>({id: "dice4", isOnBoard: true, value: 4, imageUrl:"/dice4.png"});
-  const [d5, setD5] = React.useState<DiceState>({id: "dice5", isOnBoard: true, value: 5, imageUrl:"/dice5.png"});
-  const [d6, setD6] = React.useState<DiceState>({id: "dice6", isOnBoard: true, value: 6, imageUrl:"/dice6.png"});
-  const [game, setGame] = React.useState<Game>({playerResults: new Map()})
-  const [pb, setPb] = React.useState<DiceState[]>([])
-  const [pm, setPm] = React.useState<DiceState[]>([])
-  const [gstart, setGstart] = React.useState<boolean>()
-  const [gend, setGend] = React.useState<boolean>()
-  const [upPlayer, setUpPlayer] = React.useState<Player>({id: uuidv4(), name: "Robot", avatarUrl: "/robot.png"})
-  const [downPlayer, setDownUpPlayer] = React.useState<Player>({id: uuidv4(), name: "Chuan", avatarUrl: "/coolman1.png"})
+  const [d1, setD1] = React.useState<DiceState>(Dice1);
+  const [d2, setD2] = React.useState<DiceState>(Dice2);
+  const [d3, setD3] = React.useState<DiceState>(Dice3);
+  const [d4, setD4] = React.useState<DiceState>(Dice4);
+  const [d5, setD5] = React.useState<DiceState>(Dice5);
+  const [d6, setD6] = React.useState<DiceState>(Dice6);
+  const [game, setGame] = React.useState<Game>(TheGame)
+  const [pb, setPb] = React.useState<PickedDices>()
+  const [pm, setPm] = React.useState<PickedDices>()
+  const [upPlayer, setUpPlayer] = React.useState<Player>(UpPlayer)
+  const [downPlayer, setDownUpPlayer] = React.useState<Player>(DownPlayer)
 
   // TODO: Initial a game, need to update after integrating with game server
   function initGames() {
 
-    // setUpPlayer( {id: uuidv4(), name: "Robot", avatarUrl: "/robot.png"})
-    // setDownUpPlayer({id: uuidv4(), name: "Chuan", avatarUrl: "/coolman1.png"})
+    console.log("upPlayer => ", UpPlayer)
+    console.log("downPlayer => ", DownPlayer)
 
-    console.log("upPlayer => ", upPlayer)
-    console.log("downPlayer => ", downPlayer)
+    if (UpPlayer != undefined && UpPlayer != undefined) {
+      TheGame.playerResults.set(UpPlayer.id, {selectionNumber: 1, selections: new Map(), total: 0})
+      TheGame.playerResults.set(DownPlayer.id, {selectionNumber: 1, selections: new Map(), total: 0})
+      TheGame.currentPlayerId = DownPlayer.id
 
-    if (upPlayer != undefined && downPlayer != undefined) {
-      game.playerResults.set(upPlayer.id, {selectionNumber: 1, selections: new Map(), total: 0})
-      game.playerResults.set(downPlayer.id, {selectionNumber: 1, selections: new Map(), total: 0})
-      game.currentPlayerId = downPlayer.id
-      let ngm = {
-        start: new Date(),
-        playerResults: game.playerResults,
-        //default starting with playerMan
-        currentPlayerId: downPlayer.id
-      }
-      setGame(ngm)
+      TheGame.isStart = true
+      TheGame.isEnd = false     
+      let copyGame = structuredClone(TheGame) 
+      setGame(copyGame)
+
+      //Set status
+      console.log("game.isStart=> ", game.isStart, " game.isEnd=>", game.isEnd)
     }
-
-    //Set status
-    console.log("BO: gstart=> ", gstart, " gend=>", gend)
-    setGstart(true)
-    setGend(false)
-    console.log("EO: gstart=> ", gstart, " gend=>", gend)
 
   }
 
   function reload() {
     Router.reload();
-    console.log("BO: gstart=> ", gstart, " gend=>", gend)
-    console.log("EO: gstart=> ", gstart, " gend=>", gend)
+    console.log("game.isStart=> ", game.isStart, " game.isEnd=>", game.isEnd)
 
   }
 
@@ -107,85 +118,124 @@ export default function Home() {
 
   function switchTurn() {
     console.log("Switch the turn to opponent player...")
-    if (game.currentPlayerId != undefined) {
-      // for (var id in game.playerResults.keys() ) {
-      //   if (id != game.currentPlayerId) {
-      //     game.currentPlayerId = id
-      //     setGame(game)
-      //     console.log("opponent player is =>", game.currentPlayerId==upPlayer.id?"Up":"Down", "id => ", game.currentPlayerId)
-      //     break
-      //   }
-      game.currentPlayerId=(game.currentPlayerId==upPlayer.id?downPlayer.id:upPlayer.id)
-      console.log("opponent player is =>", game.currentPlayerId==upPlayer.id?"Up":"Down", "id => ", game.currentPlayerId)
-      // }
-      // game.playerResults.forEach((score, playerId)=>{
-        
-      // })
-      setGame(game)
+    if (TheGame.currentPlayerId != undefined) {
+      // reset dices
+      TheGame.playerResults.forEach((s,k)=>{
+        s.selectionNumber=1
+        s.selections=new Map()
+      })
+      
+      // place dices back
+      for (var x of [Dice1, Dice2, Dice3, Dice4, Dice5, Dice6]) {
+        x.isOnBoard=true
+        x.withUpPlayer=false
+        x.withDownPlayer=false
+        x.isFixed=false
+        let copy = structuredClone(x)
+        switch (x.id) {
+          case "dice1":
+            setD1(copy);
+            break;
+          case "dice2":
+            setD2(copy);
+            break;
+          case "dice3":
+            setD3(copy);
+            break;
+          case "dice4":
+            setD4(copy);
+            break;
+          case "dice5":
+            setD5(copy);
+            break;
+          case "dice6":
+            setD6(copy);
+            break;
+        }
+      }
+      // switch turn
+      TheGame.currentPlayerId=(TheGame.currentPlayerId==UpPlayer.id?DownPlayer.id:UpPlayer.id)
+      console.log("opponent player is =>", TheGame.currentPlayerId==UpPlayer.id?"Up":"Down", "id => ", TheGame.currentPlayerId)
+      let copyGame = structuredClone(TheGame)
+      setGame(copyGame)
+
+      setPb({who: uuidv4(), dices:[]})
+      setPm({who: uuidv4(), dices:[]})
+
     }
 
   }
 
+  useEffect(()=>{
+    console.log("Finally :: pb.length=> ", pb?.dices.length, " pm.length=> ", pm?.dices.length)
+    console.log("Finally :: game=> ", game)
+  })
+
   function rollOneDice(ds: DiceState) {
-    if (ds.isOnBoard) {
-      let val = getRandomInt(1,6)
-      var dsx = {
-        id: ds.id, 
-        isOnBoard: ds.isOnBoard, 
-        imageUrl:"/dice"+val+".png",
-        value: val
+    
+    for (var x of [Dice1, Dice2, Dice3, Dice4, Dice5, Dice6]) {
+      if (x.id == ds.id && x.isOnBoard) {
+        let ri = getRandomInt(1,6)
+        x.imageUrl = "/dice"+ri+".png"
+        x.value = ri
+  
+        let copy = structuredClone(x)
+        switch (x.id) {
+          case "dice1":
+            setD1(copy);
+            break;
+          case "dice2":
+            setD2(copy);
+            break;
+          case "dice3":
+            setD3(copy);
+            break;
+          case "dice4":
+            setD4(copy);
+            break;
+          case "dice5":
+            setD5(copy);
+            break;
+          case "dice6":
+            setD6(copy);
+            break;
+        }
+        console.log("Roll the dice => ",x)
       }
-      switch (ds.id) {
-        case "dice1":
-          setD1(dsx);
-          break;
-        case "dice2":
-          setD2(dsx);
-          break;
-        case "dice3":
-          setD3(dsx);
-          break;
-        case "dice4":
-          setD4(dsx);
-          break;
-        case "dice5":
-          setD5(dsx);
-          break;
-        case "dice6":
-          setD6(dsx);
-          break;
-      }
-      console.log("Roll the dice => ",dsx)
     }
     
   }
 
   function rollDice() {
-    console.log("player is =>", game.currentPlayerId==upPlayer.id?"Up":"Down", "id => ", game.currentPlayerId)
+    console.log("player is =>", TheGame.currentPlayerId==UpPlayer.id?"Up":"Down", "id => ", TheGame.currentPlayerId)
     console.log("Roll all dices")
     //Before roll dices
-    let pid = game.currentPlayerId
-    if (pid != undefined) {
-      let s = game.playerResults.get(pid)
+    if (TheGame.currentPlayerId != undefined) {
+      let s = TheGame.playerResults.get(TheGame.currentPlayerId)
       if ( s != undefined) {
         s.selectionNumber = s.selections.size + 1
-        pm.map((d)=>{
+        pm?.dices.map((d)=>{
+          for (var x of [Dice1, Dice2, Dice3, Dice4, Dice5, Dice6]) {
+            if (d.id == x.id) {
+              x.isFixed = true
+            }
+          }
           d.isFixed = true
         })
       }
     }
-    setGame(game)
     
-    //Dices
-    for (var x of [d1, d2, d3, d4, d5, d6]) {
+    // Roll dices
+    for (var x of [Dice1, Dice2, Dice3, Dice4, Dice5, Dice6]) {
       if (x.isOnBoard) {
         rollOneDice(x)
       }
     }
+    
 
     // Check if it's turn for other player
     let swt = true
-    for (var x of [d1, d2, d3, d4, d5, d6]) {
+    for (var x of [Dice1, Dice2, Dice3, Dice4, Dice5, Dice6]) {
         if (x.isOnBoard) {
           if (x.value==1 || x.value==5) {
             swt = false
@@ -195,125 +245,115 @@ export default function Home() {
     if (swt) {
       switchTurn()
     }
+
   }
 
   const moveDice = (ds: DiceState) => () => {
-    console.log("Move dice => ", ds.id)
+    console.log("Move dice => ", ds)
     if (ds.isFixed) {
       console.log("Do nothing with fixed dice => ", ds.id)
       return
     }
-    // setDice1H((dice1H) => (dice1H === id ? -1 : id))
-    let dsx = {
-      id: ds.id, 
-      isOnBoard: !ds.isOnBoard, 
-      withPlayer: !ds.withPlayer,
-      imageUrl: ds.imageUrl,
-      value: ds.value
-    }
-    console.log("ds => ",ds)
-    console.log("dsx => ",dsx)
+
     // Handle click dices
-    console.log("currentPlayerId =>", game.currentPlayerId)
-    if (game.currentPlayerId != undefined) {
-      let pScore = game.playerResults.get(game.currentPlayerId)
-      console.log("pScore.selectionNumbe=>", pScore?.selectionNumber)
-      if (pScore?.selections.size == 0 || pScore?.selections.get(pScore?.selectionNumber)==undefined) {
-        console.log("pScore.selections.size ==> 0")
-        console.log("push===",dsx)
-        let nds:DiceState[] = []
-        nds.push(dsx)
-        pScore?.selections.set(pScore.selectionNumber, nds)
-        console.log(game.playerResults.get(game.currentPlayerId)?.selections)
-      } else {
-        pScore?.selections.forEach((dss: DiceState[], num: number) => {
-          if (pScore?.selectionNumber == num) {
-            console.log(num, dss);
-
-            if ( !ds.withPlayer) {
-              console.log("push===",dsx)
-              dss.push(dsx)
-            } else {
-              dss.forEach((d, idx)=>{
-                if (d.id == ds.id) {
-                  console.log("splice===",d)
-                  dss.splice(idx, 1);
-
-                }
-              })
-            }
-
-          }
-        })
-        console.log(game.playerResults.get(game.currentPlayerId)?.selections)
-      }
-      if (pScore!=undefined) {
-        let da:DiceState[] = []
-        pScore.selections.forEach((x,k)=>{
-          x.map((d)=>{
-            da.push(d)
-          })
-          da.push({id: "-", isOnBoard: false, imageUrl: ""})
-        })
-        console.log("da =>",da)
-        if (game.currentPlayerId == upPlayer?.id) {
-          setPb(da)
+    for (var x of [Dice1, Dice2, Dice3, Dice4, Dice5, Dice6]) {
+      if (x.id == ds.id) {
+        ///
+        x.isOnBoard= !x.isOnBoard
+        if (TheGame.currentPlayerId==UpPlayer.id) {
+          x.withUpPlayer=!x.withUpPlayer
         } else {
-          setPm(da)
+          x.withDownPlayer=!x.withDownPlayer
         }
-        
-      }
-      
-    }
-    setGame(game)
-
+        ///
+        console.log("TheGame.currentPlayerId =>", TheGame.currentPlayerId)
+        if (TheGame.currentPlayerId != undefined) {
+          let pScore = TheGame.playerResults.get(TheGame.currentPlayerId)
+          console.log("pScore.selectionNumbe =>", pScore?.selectionNumber)
+          if (pScore?.selections.size == 0 || pScore?.selections.get(pScore?.selectionNumber)==undefined) {
+            console.log("pScore.selections.size ==> 0")
+            console.log("push===",x)
+            let nds:DiceState[] = []
+            nds.push(x)
+            pScore?.selections.set(pScore.selectionNumber, nds)
+            console.log(TheGame.playerResults.get(TheGame.currentPlayerId)?.selections)
+          } else {
+            pScore?.selections.forEach((dss: DiceState[], num: number) => {
+              if (pScore?.selectionNumber == num) {
+                console.log(num, dss);
     
-    //
+                if ( !ds.withUpPlayer || !ds.withDownPlayer) {
+                  console.log("push===",x)
+                  dss.push(x)
+                } else {
+                  dss.forEach((d, idx)=>{
+                    if (d.id == ds.id) {
+                      console.log("splice===",d)
+                      dss.splice(idx, 1);
+                    }
+                  })
+                }
+    
+              }
+            })
+            console.log(TheGame.playerResults.get(TheGame.currentPlayerId)?.selections)
+          }
+          if (pScore!=undefined) {
+            let da:PickedDices = {who: uuidv4(), dices:[]}
+            pScore.selections.forEach((x,k)=>{
+              x.map((d)=>{
+                da.dices.push(d)
+              })
+              da.dices.push({id: "-", isOnBoard: false, imageUrl: ""})
+            })
+            console.log("da =>",da)
+            if (TheGame.currentPlayerId == upPlayer?.id) {
+              setPb(da)
+            } else {
+              setPm(da)
+            }
+            
+          }
+          
+        }
 
-    // Change states of 'isOnBoard && withPlayer'
-    switch (ds.id) {
-      case "dice1":
-        setD1(dsx);
-        break;
-      case "dice2":
-        setD2(dsx);
-        break;
-      case "dice3":
-        setD3(dsx);
-        break;
-      case "dice4":
-        setD4(dsx);
-        break;
-      case "dice5":
-        setD5(dsx);
-        break;
-      case "dice6":
-        setD6(dsx);
-        break;
+        // Change states of 'isOnBoard && withPlayer'
+        let copy = structuredClone(x)
+        switch (ds.id) {
+          case "dice1":
+            setD1(copy);
+            break;
+          case "dice2":
+            setD2(copy);
+            break;
+          case "dice3":
+            setD3(copy);
+            break;
+          case "dice4":
+            setD4(copy);
+            break;
+          case "dice5":
+            setD5(copy);
+            break;
+          case "dice6":
+            setD6(copy);
+            break;
+        }
+
+      }
     }
-
-    // Update player's own board
-
+    let copyGame = structuredClone(TheGame)
+    setGame(copyGame)
+    //
   
   }
 
+  // TODO: calculating score
   function calculate() {
 
-    //x1=x100
-    //x5=x50
-    //3*1=1000
-    //3*2=200
-    //3*3=300
-    //3*4=400
-    //3*5=500
-    //3*6=600
-    //4*?=1000
-    //5*?=2000
-    //6*?=3000
-    //3*??=1500
-    //1,2,3,4,5,6=2500
   }
 
+  
   return (
     <Container fluid css={{ height: '1400px', }}>
       <Head>
@@ -360,7 +400,7 @@ export default function Home() {
             <Grid>
               <Grid.Container>
                 {
-                  pb.map((d, idx) => {
+                  pb?.dices.map((d, idx) => {
                     if (d.id == "-") {
                       return <Avatar key={uuidv4()} src={d.imageUrl} size="xl" squared zoomed bordered onClick={ moveDice(d)} /> && <Spacer key={uuidv4()} y={2}></Spacer>
                     } else {
@@ -411,7 +451,7 @@ export default function Home() {
                 bordered
                 ghost
                 onPress={rollDice}
-                disabled={!gstart}
+                disabled={!game.isStart}
                 >Roll Dice</Button>
               </Grid>
               <Grid>
@@ -424,7 +464,7 @@ export default function Home() {
                 }}
                 bordered
                 ghost
-                disabled={!gstart}
+                disabled={!game.isStart}
                 >Bank Score</Button>
               </Grid>
             </Grid.Container>
@@ -446,7 +486,7 @@ export default function Home() {
             <Grid>
               <Grid.Container>
                 {
-                  pm.map((d, idx) => {
+                  pm?.dices.map((d, idx) => {
                     if (d.id == "-") {
                       return <Avatar key={uuidv4()} src={d.imageUrl} size="xl" squared zoomed bordered onClick={ moveDice(d)} /> && <Spacer key={uuidv4()} y={2}></Spacer>
                     } else {
