@@ -1,8 +1,8 @@
 import Head from 'next/head'
 import Image from 'next/image'
 // import styles from '../styles/Home.module.css'
-import {Container, Grid, Text, Button, Input, Badge, Avatar, Spacer, Textarea, Tooltip} from '@nextui-org/react';
-import React, { useEffect } from 'react';
+import {Container, Grid, Text, Button, Input, Badge, Avatar, Spacer, Textarea, Tooltip, Modal, Row, Checkbox} from '@nextui-org/react';
+import React, { Component, useEffect } from 'react';
 import {v4 as uuidv4} from 'uuid';
 import Router from 'next/router'
 
@@ -68,6 +68,7 @@ var UpPlayer:Player = {id: uuidv4(), name: "Robot", avatarUrl: "/robot.png"}
 var DownPlayer:Player = {id: uuidv4(), name: "Chuan", avatarUrl: "/coolman1.png"}
 //
 
+
 // Main
 export default function Home() {
   const [d1, setD1] = React.useState<DiceState>(Dice1);
@@ -80,33 +81,48 @@ export default function Home() {
   const [pb, setPb] = React.useState<PickedDices>()
   const [pm, setPm] = React.useState<PickedDices>()
   const [upPlayer, setUpPlayer] = React.useState<Player>(UpPlayer)
-  const [downPlayer, setDownUpPlayer] = React.useState<Player>(DownPlayer)
+  const [downPlayer, setDownPlayer] = React.useState<Player>(DownPlayer)
   const [onlinePlayers, setOnlinePlayers] = React.useState<string[]>(["Junior", "Jane", "Tom", "Zapper", "Doctors"])
+  const [visible, setVisible] = React.useState(false);
 
+  const closeHandler = () => {
+    setVisible(false);
+  };
+  const login = () => {
+    setVisible(true);
+    
+  };
+
+  
   // TODO: Initial a game, need to update after integrating with game server
   function initGames() {
+    //Inital players' name
+    setDownPlayer(DownPlayer);
 
-    console.log("upPlayer => ", UpPlayer)
-    console.log("downPlayer => ", DownPlayer)
-
-    if (UpPlayer != undefined && UpPlayer != undefined) {
-      //Setup players
-      TheGame.playerResults.set(UpPlayer.id, {selectionNumber: 1, selections: new Map(), total: 0})
-      TheGame.playerResults.set(DownPlayer.id, {selectionNumber: 1, selections: new Map(), total: 0})
-      TheGame.currentPlayerId = DownPlayer.id
-
-      //Turn on dices
-      initalDices()
-
-      //Check-in status
-      TheGame.isStart = true
-      TheGame.isEnd = false     
-
-      let copyGame = structuredClone(TheGame) 
-      setGame(copyGame)
-
-      //Set status
-      console.log("game.isStart=> ", game.isStart, " game.isEnd=>", game.isEnd)
+    if (DownPlayer.name != "Chuan") {
+      closeHandler()
+      console.log("upPlayer => ", UpPlayer)
+      console.log("downPlayer => ", DownPlayer)
+  
+      if (UpPlayer != undefined && UpPlayer != undefined) {
+        //Setup players
+        TheGame.playerResults.set(UpPlayer.id, {selectionNumber: 1, selections: new Map(), total: 0})
+        TheGame.playerResults.set(DownPlayer.id, {selectionNumber: 1, selections: new Map(), total: 0})
+        TheGame.currentPlayerId = DownPlayer.id
+  
+        //Turn on dices
+        initalDices()
+  
+        //Check-in status
+        TheGame.isStart = true
+        TheGame.isEnd = false     
+  
+        let copyGame = structuredClone(TheGame) 
+        setGame(copyGame)
+  
+        //Set status
+        console.log("game.isStart=> ", game.isStart, " game.isEnd=>", game.isEnd)
+      }      
     }
 
   }
@@ -507,7 +523,7 @@ export default function Home() {
         </Grid>       
         <Grid id="down" xs={12}>
             <Grid>
-            <Badge disableOutline placement="bottom-right" content="Chuan">
+            <Badge disableOutline placement="bottom-right" content={downPlayer.name}>
                 <Avatar
                   squared
                   size="xl"
@@ -550,11 +566,53 @@ export default function Home() {
                 }}
                 bordered
                 ghost
-                onPress={initGames}
+                onPress={login}
           >
             Start Game
           </Button>
-          <Spacer y={2}></Spacer>     
+          <Spacer y={2}></Spacer>
+          <>
+            <Modal
+              closeButton
+              preventClose
+              aria-labelledby="modal-title"
+              open={visible}
+              onClose={closeHandler}
+            >
+              <Modal.Header>
+                <Text id="modal-title" size={18}>
+                  Welcome to &nbsp;
+                  <Text b i size={18}>
+                    Farkle World
+                  </Text>
+                </Text>
+              </Modal.Header>
+              <Modal.Body>
+                <Input
+                  clearable
+                  bordered
+                  fullWidth
+                  color="primary"
+                  size="lg"
+                  labelLeft="Name"
+                  onChange={e=>{ DownPlayer.name=e.target.value; }}
+                />
+                <Row justify="space-between">
+                  <Checkbox>
+                    <Text size={14}>Remember me</Text>
+                  </Checkbox>
+                </Row>
+              </Modal.Body>
+              <Modal.Footer>
+                <Button auto flat color="error" onClick={closeHandler}>
+                  Close
+                </Button>
+                <Button auto onClick={initGames}>
+                  Login
+                </Button>
+              </Modal.Footer>
+            </Modal>
+          </>
           <Button aria-label='reload' css={{
                   background: 'white',
                   color: 'Black',
