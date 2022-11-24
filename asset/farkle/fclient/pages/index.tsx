@@ -1,7 +1,7 @@
 import Head from 'next/head'
 import Image from 'next/image'
 // import styles from '../styles/Home.module.css'
-import {Container, Grid, Card, Text, Row, Button, Table, Input, Badge, Avatar, Spacer, Textarea} from '@nextui-org/react';
+import {Container, Grid, Text, Button, Input, Badge, Avatar, Spacer, Textarea, Tooltip} from '@nextui-org/react';
 import React, { useEffect } from 'react';
 import {v4 as uuidv4} from 'uuid';
 import Router from 'next/router'
@@ -47,6 +47,7 @@ interface Game {
   playerResults: Map<string,Score>
 }
 
+//Picked dices for the player
 interface PickedDices {
   who: string
   dices: DiceState[]
@@ -54,12 +55,12 @@ interface PickedDices {
 
 // ////////declare global/////////
 // Six dices 1-6
-var Dice1:DiceState = {id: "dice1", isOnBoard: true, value: 1, imageUrl:"/dice1.png"}
-var Dice2:DiceState = {id: "dice2", isOnBoard: true, value: 2, imageUrl:"/dice2.png"}
-var Dice3:DiceState = {id: "dice3", isOnBoard: true, value: 3, imageUrl:"/dice3.png"}
-var Dice4:DiceState = {id: "dice4", isOnBoard: true, value: 4, imageUrl:"/dice4.png"}
-var Dice5:DiceState = {id: "dice5", isOnBoard: true, value: 5, imageUrl:"/dice5.png"}
-var Dice6:DiceState = {id: "dice6", isOnBoard: true, value: 6, imageUrl:"/dice6.png"}
+var Dice1:DiceState = {id: "dice1", isOnBoard: false, value: 1, imageUrl:"/dice1.png"}
+var Dice2:DiceState = {id: "dice2", isOnBoard: false, value: 2, imageUrl:"/dice2.png"}
+var Dice3:DiceState = {id: "dice3", isOnBoard: false, value: 3, imageUrl:"/dice3.png"}
+var Dice4:DiceState = {id: "dice4", isOnBoard: false, value: 4, imageUrl:"/dice4.png"}
+var Dice5:DiceState = {id: "dice5", isOnBoard: false, value: 5, imageUrl:"/dice5.png"}
+var Dice6:DiceState = {id: "dice6", isOnBoard: false, value: 6, imageUrl:"/dice6.png"}
 // The game
 var TheGame:Game = {playerResults: new Map()}
 // 2 Players
@@ -80,6 +81,7 @@ export default function Home() {
   const [pm, setPm] = React.useState<PickedDices>()
   const [upPlayer, setUpPlayer] = React.useState<Player>(UpPlayer)
   const [downPlayer, setDownUpPlayer] = React.useState<Player>(DownPlayer)
+  const [onlinePlayers, setOnlinePlayers] = React.useState<string[]>(["Junior", "Jane", "Tom", "Zapper", "Doctors"])
 
   // TODO: Initial a game, need to update after integrating with game server
   function initGames() {
@@ -88,12 +90,18 @@ export default function Home() {
     console.log("downPlayer => ", DownPlayer)
 
     if (UpPlayer != undefined && UpPlayer != undefined) {
+      //Setup players
       TheGame.playerResults.set(UpPlayer.id, {selectionNumber: 1, selections: new Map(), total: 0})
       TheGame.playerResults.set(DownPlayer.id, {selectionNumber: 1, selections: new Map(), total: 0})
       TheGame.currentPlayerId = DownPlayer.id
 
+      //Turn on dices
+      initalDices()
+
+      //Check-in status
       TheGame.isStart = true
       TheGame.isEnd = false     
+
       let copyGame = structuredClone(TheGame) 
       setGame(copyGame)
 
@@ -116,43 +124,63 @@ export default function Home() {
 
   }
 
+  function initalDices() {
+    // place dices back && reset values
+    for (var x of [Dice1, Dice2, Dice3, Dice4, Dice5, Dice6]) {
+      x.isOnBoard=true
+      x.withUpPlayer=false
+      x.withDownPlayer=false
+      x.isFixed=false
+      
+      let copy = structuredClone(x)
+      switch (x.id) {
+        case "dice1":
+          copy.value=1
+          copy.imageUrl="/dice"+copy.value+".png"
+          setD1(copy);
+          break;
+        case "dice2":
+          copy.value=2
+          copy.imageUrl="/dice"+copy.value+".png"
+          setD2(copy);
+          break;
+        case "dice3":
+          copy.value=3
+          copy.imageUrl="/dice"+copy.value+".png"
+          setD3(copy);
+          break;
+        case "dice4":
+          copy.value=4
+          copy.imageUrl="/dice"+copy.value+".png"
+          setD4(copy);
+          break;
+        case "dice5":
+          copy.value=5
+          copy.imageUrl="/dice"+copy.value+".png"
+          setD5(copy);
+          break;
+        case "dice6":
+          copy.value=6
+          copy.imageUrl="/dice"+copy.value+".png"
+          setD6(copy);
+          break;
+      }
+    }
+    
+  }
+
   function switchTurn() {
     console.log("Switch the turn to opponent player...")
     if (TheGame.currentPlayerId != undefined) {
-      // reset dices
+      // reset results
       TheGame.playerResults.forEach((s,k)=>{
         s.selectionNumber=1
         s.selections=new Map()
       })
       
-      // place dices back
-      for (var x of [Dice1, Dice2, Dice3, Dice4, Dice5, Dice6]) {
-        x.isOnBoard=true
-        x.withUpPlayer=false
-        x.withDownPlayer=false
-        x.isFixed=false
-        let copy = structuredClone(x)
-        switch (x.id) {
-          case "dice1":
-            setD1(copy);
-            break;
-          case "dice2":
-            setD2(copy);
-            break;
-          case "dice3":
-            setD3(copy);
-            break;
-          case "dice4":
-            setD4(copy);
-            break;
-          case "dice5":
-            setD5(copy);
-            break;
-          case "dice6":
-            setD6(copy);
-            break;
-        }
-      }
+      //reset dices
+      initalDices()
+
       // switch turn
       TheGame.currentPlayerId=(TheGame.currentPlayerId==UpPlayer.id?DownPlayer.id:UpPlayer.id)
       console.log("opponent player is =>", TheGame.currentPlayerId==UpPlayer.id?"Up":"Down", "id => ", TheGame.currentPlayerId)
@@ -365,8 +393,8 @@ export default function Home() {
         <meta name="description" content="Farkle built by CC" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <Grid.Container gap={2} justify="center">
-        <Grid xs={12}>
+      <Grid.Container id="mainGame" gap={2} justify="center">
+        <Grid id="name" xs={12}>
         <Text
             h1
             size={60}
@@ -388,7 +416,7 @@ export default function Home() {
             by CC
           </Text>
         </Grid>
-        <Grid xs={12}>
+        <Grid id="up" xs={12}>
             <Grid>
               <Badge disableOutline placement="bottom-right" content="Robot">
                 <Avatar
@@ -402,7 +430,7 @@ export default function Home() {
               </Badge>
             </Grid>
             <Grid>
-              <Input readOnly labelLeft="Score" placeholder="0" />
+              <Input id='upScore' labelLeft="Score" placeholder="0" disabled/>
             </Grid>
             <Grid>
               <Grid.Container>
@@ -420,29 +448,29 @@ export default function Home() {
               </Grid.Container> 
             </Grid>
         </Grid>
-        <Grid xs={12} css={{ alignItems: 'center', }}>
+        <Grid key="mainBoard" xs={12} css={{ alignItems: 'center', }}>
           <Grid.Container gap={2} xs={12} css={{
             background: 'green',
             alignContent: 'center',
             alignItems: 'center',
           }}>
             <Grid>
-              { d1.isOnBoard && <Avatar src={d1.imageUrl} size="xl" squared zoomed bordered onClick={ moveDice(d1)} /> }
+              { d1.isOnBoard && <Avatar src={d1.imageUrl} size="xl" squared zoomed bordered onClick={ moveDice(d1)} as="button"/> }
             </Grid>
             <Grid>
-            { d2.isOnBoard && <Avatar src={d2.imageUrl} size="xl" squared zoomed bordered onClick={ moveDice(d2)} /> }
+            { d2.isOnBoard && <Avatar src={d2.imageUrl} size="xl" squared zoomed bordered onClick={ moveDice(d2)} as="button"/> }
             </Grid>
             <Grid>
-            { d3.isOnBoard && <Avatar src={d3.imageUrl} size="xl" squared zoomed bordered onClick={ moveDice(d3)} /> }
+            { d3.isOnBoard && <Avatar src={d3.imageUrl} size="xl" squared zoomed bordered onClick={ moveDice(d3)} as="button"/> }
             </Grid>
             <Grid>
-            { d4.isOnBoard && <Avatar src={d4.imageUrl} size="xl" squared zoomed bordered onClick={ moveDice(d4)} /> }
+            { d4.isOnBoard && <Avatar src={d4.imageUrl} size="xl" squared zoomed bordered onClick={ moveDice(d4)} as="button"/> }
             </Grid>
             <Grid>
-            { d5.isOnBoard && <Avatar src={d5.imageUrl} size="xl" squared zoomed bordered onClick={ moveDice(d5)} /> }
+            { d5.isOnBoard && <Avatar src={d5.imageUrl} size="xl" squared zoomed bordered onClick={ moveDice(d5)} as="button"/> }
             </Grid>
             <Grid>
-            { d6.isOnBoard && <Avatar src={d6.imageUrl} size="xl" squared zoomed bordered onClick={ moveDice(d6)} /> }
+            { d6.isOnBoard && <Avatar src={d6.imageUrl} size="xl" squared zoomed bordered onClick={ moveDice(d6)} as="button"/> }
             </Grid>
             <Spacer y={10} />
 
@@ -462,7 +490,7 @@ export default function Home() {
                 >Roll Dice</Button>
               </Grid>
               <Grid>
-                <Button aria-label="bank" css={{
+                <Button aria-label='bank' css={{
                   background: 'white',
                   color: 'Black',
                   borderColor: 'Beige',
@@ -477,7 +505,7 @@ export default function Home() {
             </Grid.Container>
           </Grid.Container>
         </Grid>       
-        <Grid xs={12}>
+        <Grid id="down" xs={12}>
             <Grid>
             <Badge disableOutline placement="bottom-right" content="Chuan">
                 <Avatar
@@ -491,7 +519,7 @@ export default function Home() {
               </Badge>
             </Grid>
             <Grid>
-              <Input readOnly labelLeft="Score" placeholder="0" />
+              <Input id='downScore' labelLeft="Score" placeholder="0" disabled/>
             </Grid>
             <Grid>
               <Grid.Container>
@@ -510,10 +538,10 @@ export default function Home() {
             </Grid>
         </Grid>
       </Grid.Container>
-      <Grid.Container>
-          <Input labelLeft="Server" placeholder="127.0.0.1:9000" />   
+      <Grid.Container id="controller">
+          <Input id='server' labelLeft="Server" placeholder="127.0.0.1:9000" />   
           <Spacer y={2}></Spacer>     
-          <Button aria-label='roll' css={{
+          <Button aria-label='init' css={{
                   background: 'white',
                   color: 'Black',
                   borderColor: 'Beige',
@@ -527,7 +555,7 @@ export default function Home() {
             Start Game
           </Button>
           <Spacer y={2}></Spacer>     
-          <Button aria-label='roll' css={{
+          <Button aria-label='reload' css={{
                   background: 'white',
                   color: 'Black',
                   borderColor: 'Beige',
@@ -541,19 +569,39 @@ export default function Home() {
             Reload
           </Button>
       </Grid.Container>
-      <Grid.Container>
+      <Grid.Container id="onlinePlayers">
+        <Spacer y={1}></Spacer> 
+        <Grid xs={12}>
+          <Text size="$2xl" css={{textGradient: "45deg, $blue600 -20%, $pink600 50%", fontStyle: "italic"}}>#Online Players# </Text>
+          <Spacer></Spacer> 
+          <Avatar.Group count={onlinePlayers.length}>
+            {onlinePlayers.map((name, index) => (
+              <Tooltip
+              key={index}
+              color="primary"
+              content={"Click to challenge :: [ "+name+" ]"}
+              placement="topStart"
+              >
+                <Avatar key={index} size="lg" pointer text={name} stacked />
+              </Tooltip>
+            ))}
+          </Avatar.Group>
+        </Grid>
+        <Spacer y={1}></Spacer> 
+      </Grid.Container>
+      <Grid.Container id="remark">
         <Textarea
-          width='96%'
+          id='rules'
+          width='98%'
           size='lg'
-          status="success"
-          helperColor="success"
+          status="warning"
+          color="warning"
+          helperColor="warning"
           initialValue="..."
-          placeholder="Description"
-          label="Game's rules"
           value={
-            "🚀#1. Ones => 100\n🚀#2. Fives => 50\n🚀#3. Three Ones => 1000\n🚀#4. Three Twos => 200\n🚀#5. Three Threes => 300\n🚀#6. Three Fours => 400\n🚀#7. Three Fives => 500\n🚀#8. Three Sixes => 600\n🚀#9. Four of a kind => 1000\n🚀#10. Five of a kind => 2000\n🚀#11. Six of a kind => 3000\n🚀#12. Three Pairs => 1500\n🚀#13. Run => 2500\n"
+            "::Game's rules::\n\n🚀#1. Ones => 100\n🚀#2. Fives => 50\n🚀#3. Three Ones => 1000\n🚀#4. Three Twos => 200\n🚀#5. Three Threes => 300\n🚀#6. Three Fours => 400\n🚀#7. Three Fives => 500\n🚀#8. Three Sixes => 600\n🚀#9. Four of a kind => 1000\n🚀#10. Five of a kind => 2000\n🚀#11. Six of a kind => 3000\n🚀#12. Three Pairs => 1500\n🚀#13. Run => 2500\n"
           }
-          rows={13}
+          maxRows={20}
           readOnly
         />
       </Grid.Container>
