@@ -88,12 +88,12 @@ export default function Home() {
   const closeHandler = () => {
     setVisible(false);
   };
+
   const login = () => {
     setVisible(true);
     
   };
 
-  
   // TODO: Initial a game, need to update after integrating with game server
   function initGames() {
     //Inital players' name
@@ -209,11 +209,6 @@ export default function Home() {
     }
 
   }
-
-  useEffect(()=>{
-    console.log("Finally :: pb.length=> ", pb?.dices.length, " pm.length=> ", pm?.dices.length)
-    console.log("Finally :: game=> ", game)
-  })
 
   function rollOneDice(ds: DiceState) {
     
@@ -396,12 +391,79 @@ export default function Home() {
   
   }
 
-  // TODO: calculating score
-  function calculate() {
+  // Calculating score
+  // All values in array equal to specfic number
+  function allEqual(ns:number[], num: number) {
+    if (num == -1) {
+      return ns.every(val => val === ns[0])
+    } else {
+      return ns.every(val => val === ns[0]) && ns[0]==num
+    }
+    
+  }
+
+  function calculate(dVs:number[]) {
+    // x1 => x100
+    if (dVs.length>0 && allEqual(dVs, 1)) {
+      return dVs.length*100
+    }
+    // x5 => x50
+    if (dVs.length>0 && allEqual(dVs, 5)) {
+      return dVs.length*50
+    }
+    // 3x1 => 1000
+    if (dVs.length==3 && allEqual(dVs, 1)) {
+      return 1000
+    }
+    // 3x2 => 200
+    if (dVs.length==3 && allEqual(dVs, 2)) {
+      return 200
+    }
+    // 3x3 => 300
+    if (dVs.length==3 && allEqual(dVs, 3)) {
+      return 300
+    }
+    // 3x4 => 400
+    if (dVs.length==3 && allEqual(dVs, 4)) {
+      return 400
+    }
+    // 3x5 => 500
+    if (dVs.length==3 && allEqual(dVs, 5)) {
+      return 500
+    }
+    // 3x6 => 600
+    if (dVs.length==3 && allEqual(dVs, 6)) {
+      return 600
+    }
+    // 4x? => 1000
+    if (dVs.length==4 && allEqual(dVs, -1)) {
+      return 1000
+    }
+    // 5x? => 2000
+    if (dVs.length==5 && allEqual(dVs, -1)) {
+      return 2000
+    }
+    // 6x? => 3000
+    if (dVs.length==6 && allEqual(dVs, -1)) {
+      return 3000
+    }
+    dVs.sort(((a, b) => a-b))
+    // 3x?? => 1500
+    if (dVs.length==6 && allEqual(dVs.slice(0,3), -1) && allEqual(dVs.slice(2,4), -1) && allEqual(dVs.slice(4,6), -1)) {
+      return 1500
+    }
+    // 1,2,3,4,5,6 => 2500
+    if (dVs.length==6 && dVs.toString()=="123456") {
+      return 3000
+    }
 
   }
 
-  
+  useEffect(()=>{
+    console.log("Finally :: pb.length=> ", pb?.dices.length, " pm.length=> ", pm?.dices.length)
+    console.log("Finally :: game=> ", game)
+  })
+
   return (
     <Container fluid css={{ height: '1400px', }}>
       <Head>
