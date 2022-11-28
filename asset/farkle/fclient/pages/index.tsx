@@ -82,8 +82,12 @@ export default function Home() {
   const [pm, setPm] = React.useState<PickedDices>()
   const [upPlayer, setUpPlayer] = React.useState<Player>(UpPlayer)
   const [downPlayer, setDownPlayer] = React.useState<Player>(DownPlayer)
-  const [onlinePlayers, setOnlinePlayers] = React.useState<string[]>(["Junior", "Jane", "Tom", "Zapper", "Doctors"])
+  const [onlinePlayers, setOnlinePlayers] = React.useState<string[]>([])
   const [visible, setVisible] = React.useState(false);
+  const [upScore, setUpScore] = React.useState<number>(0)
+  const [downScore, setDownScore] = React.useState<number>(0)
+  const [upTotal, setUpTotal] = React.useState<number>(0)
+  const [downTotal, setDownTotal] = React.useState<number>(0)
 
   const closeHandler = () => {
     setVisible(false);
@@ -122,6 +126,10 @@ export default function Home() {
   
         //Set status
         console.log("game.isStart=> ", game.isStart, " game.isEnd=>", game.isEnd)
+
+        //Add player to list
+        onlinePlayers.push(DownPlayer.name)
+        setOnlinePlayers(onlinePlayers)
       }      
     }
 
@@ -205,6 +213,9 @@ export default function Home() {
 
       setPb({who: uuidv4(), dices:[]})
       setPm({who: uuidv4(), dices:[]})
+
+      setUpScore(calculate(UpPlayer.id,false))
+      setDownScore(calculate(DownPlayer.id,false))
 
     }
 
@@ -325,7 +336,7 @@ export default function Home() {
               if (pScore?.selectionNumber == num) {
                 console.log(num, dss);
     
-                if ( !ds.withUpPlayer || !ds.withDownPlayer) {
+                if ( !x.isOnBoard) {
                   console.log("push===",x)
                   dss.push(x)
                 } else {
@@ -387,7 +398,12 @@ export default function Home() {
     }
     let copyGame = structuredClone(TheGame)
     setGame(copyGame)
-    //
+
+    //Calculate
+    setUpScore(calculate(UpPlayer.id, false))
+    setDownScore(calculate(DownPlayer.id, false))
+    setUpTotal(calculate(UpPlayer.id, true))
+    setDownTotal(calculate(DownPlayer.id, true))
   
   }
 
@@ -402,15 +418,7 @@ export default function Home() {
     
   }
 
-  function calculate(dVs:number[]) {
-    // x1 => x100
-    if (dVs.length>0 && allEqual(dVs, 1)) {
-      return dVs.length*100
-    }
-    // x5 => x50
-    if (dVs.length>0 && allEqual(dVs, 5)) {
-      return dVs.length*50
-    }
+  function calculator(dVs:number[]):number {
     // 3x1 => 1000
     if (dVs.length==3 && allEqual(dVs, 1)) {
       return 1000
@@ -456,7 +464,50 @@ export default function Home() {
     if (dVs.length==6 && dVs.toString()=="123456") {
       return 3000
     }
+    
+    // x1 => x100
+    // x5 => x50
+    if (dVs.length>0) {
+      let a:number = 0
+      dVs.map((s) => {
+        if (s!=1 && s!=5) {
+          return 0
+        } else {
+          if (s==1) {
+            a+=100
+          }
+          if (s==5) {
+            a+=50
+          }
+        }
+      })
+      return a
+    }
+  
+    return 0
+  }
 
+  function calculate(playerId:string, isTotal:boolean):number {
+    let s:number = 0
+    
+    let score = TheGame.playerResults.get(playerId)
+    if (score!=undefined) {
+      let sn = score.selectionNumber
+      score.selections.forEach((ds, k)=>{
+        if (k == sn || isTotal) {
+          let dv:number[] = []
+          ds.map((d)=>{
+            if (d.value!=undefined) {
+              dv.push(d.value)
+            }
+          })
+          s += calculator(dv)
+        }
+      })
+    }
+    
+    console.log("score=== ", s)
+    return s
   }
 
   useEffect(()=>{
@@ -508,7 +559,9 @@ export default function Home() {
               </Badge>
             </Grid>
             <Grid>
-              <Input id='upScore' labelLeft="Score" placeholder="0" disabled/>
+              {/* <Input id='upScore' labelLeft="Score" placeholder="0" value={upScore} /> */}
+              <Input bordered label="Score" placeholder="0" color="primary" width="100px" value={upScore} disabled />
+              <Input bordered label="Banked" placeholder="0" color="success" width="100px" value={upTotal} disabled />
             </Grid>
             <Grid>
               <Grid.Container>
@@ -597,7 +650,10 @@ export default function Home() {
               </Badge>
             </Grid>
             <Grid>
-              <Input id='downScore' labelLeft="Score" placeholder="0" disabled/>
+              {/* <Input id='downScore' labelLeft="Score" placeholder="0" value={downScore}/> */}
+              <Input bordered label="Score" placeholder="0" color="primary" width="100px" value={downScore} disabled />
+              <Input bordered label="Banked" placeholder="0" color="success" width="100px" value={downTotal} disabled />
+
             </Grid>
             <Grid>
               <Grid.Container>
