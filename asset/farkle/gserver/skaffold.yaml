@@ -1,0 +1,32 @@
+apiVersion: skaffold/v2beta28
+kind: Config
+metadata:
+  name: farkle-k8s
+build:
+  artifacts:
+  - image: asia-docker.pkg.dev/play-api-service/test-images/farkle
+    # context: tracker
+    ko:
+      labels:
+        org.opencontainers.image.licenses: Apache-2.0
+        org.opencontainers.image.revision: "{{.GITHUB_SHA}}"
+        org.opencontainers.image.source: "{{.GITHUB_SERVER_URL}}/{{.GITHUB_REPOSITORY}}"
+      dependencies:
+        paths:
+          - game
+          - .
+    platforms:
+      - linux/amd64
+
+deploy:
+  kustomize:
+    paths: 
+      - ./manifests/
+  statusCheck: true
+
+profiles:
+  - name: aws
+    deploy:
+      kustomize:
+        paths:
+          - ./manifests/aws/

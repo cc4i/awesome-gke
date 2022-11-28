@@ -1,0 +1,49 @@
+apiVersion: "agones.dev/v1"
+kind: GameServer
+metadata:
+  name: "gds-farkle"
+spec:
+  # if there is more than one container, specify which one is the game server
+  container: farkle-server
+  # Array of ports that can be exposed as direct connections to the game server container
+  ports:
+    # name is a descriptive name for the port
+  - name: default
+    portPolicy: Dynamic
+    containerPort: 7654
+    protocol: TCP
+  # Health checking for the running game server
+  health:
+    # Disable health checking. defaults to false, but can be set to true
+    disabled: false
+    # Number of seconds after the container has started before health check is initiated. Defaults to 5 seconds
+    initialDelaySeconds: 5
+    # If the `Health()` function doesn't get called at least once every period (seconds), then
+    # the game server is not healthy. Defaults to 5
+    periodSeconds: 5
+    # Minimum consecutive failures for the health probe to be considered failed after having succeeded.
+    # Defaults to 3. Minimum value is 1
+    failureThreshold: 3
+  # Parameters for game server sidecar
+  sdkServer:
+    logLevel: Info
+    grpcPort: 9357
+    httpPort: 9358
+  # players:
+  #   # set this GameServer's initial player capacity
+  #   initialCapacity: 10
+  #
+  # Pod template configuration
+  template:
+    spec:
+      containers:
+      - name: farkle-server
+        image:  asia-docker.pkg.dev/play-api-service/test-images/farkle
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"

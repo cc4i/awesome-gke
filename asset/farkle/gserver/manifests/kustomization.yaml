@@ -1,0 +1,7 @@
+
+images:
+  - name:  asia-docker.pkg.dev/play-api-service/test-images/farkle
+    newTag: v0.11-46-g37f0729-dirty
+
+resources:
+  - gs-deploy.yaml
