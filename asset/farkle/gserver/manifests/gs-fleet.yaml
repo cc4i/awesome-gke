@@ -1,0 +1,25 @@
+apiVersion: "agones.dev/v1"
+kind: Fleet
+metadata:
+  name: gds-farkle-fleet
+spec:
+  replicas: 2
+  template:
+    spec:
+      ports:
+      - name: default
+        containerPort: 7654
+        portPolicy: Dynamic
+        protocol: TCP
+      template:
+        spec:
+          containers:
+          - name: farkle-server
+            image: asia-docker.pkg.dev/play-api-service/test-images/farkle
+            imagePullPolicy: Always
+            resources:
+              requests:
+                memory: "128Mi"
+                cpu: "100m"
+              limits:
+                memory: "256Mi"

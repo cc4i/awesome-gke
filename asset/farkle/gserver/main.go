@@ -218,12 +218,13 @@ func handleResponse(txt string, s *sdk.SDK, cancel context.CancelFunc) (response
 	switch parts[0] {
 	// All actions from Farkle client
 	case "FARKLE_ACTION":
-		if len(parts) != 2 {
+		if len(parts) < 2 {
 			response = "Invalid FARKLE_ACTION, should have 1 argument"
 			responseError = fmt.Errorf("Invalid FARKLE_ACTION, should have 1 argument")
 			return
 		}
-		response, _ = game.FarkleHandler(parts[1])
+
+		response, responseError = game.FarkleHandler(strings.TrimLeft(txt, "FARKLE_ACTION"))
 		return
 
 	// shuts down the gameserver
@@ -333,6 +334,8 @@ func handleResponse(txt string, s *sdk.SDK, cancel context.CancelFunc) (response
 
 	case "PLAYER_COUNT":
 		response = getPlayerCount(s)
+	default:
+		response = "ACK: " + txt
 	}
 
 	return
@@ -358,10 +361,7 @@ func wsListener(s *sdk.SDK, cancel context.CancelFunc) gin.HandlerFunc {
 
 			response, err := handleResponse(string(message), s, cancel)
 			if err != nil {
-				response = "ERROR: " + response + "\n"
-			} else {
-				response = "ACK TCP: " + response + "\n"
-
+				response = "ERROR: " + err.Error() + "\n"
 			}
 			err = ws.WriteMessage(mt, []byte(response))
 			if err != nil {

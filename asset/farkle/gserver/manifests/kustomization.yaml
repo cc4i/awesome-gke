@@ -5,3 +5,5 @@ images:
 
 resources:
   - gs-deploy.yaml
+  - gs-fleet.yaml
+  - gs-fleet-autoscaler.yaml
