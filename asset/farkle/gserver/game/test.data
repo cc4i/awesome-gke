@@ -1,0 +1,6 @@
+
+FARKLE_ACTION {"currentPlayer": {"name": "cc1"}, "action": "login"}
+[{"name":"cc1","online":true}]
+FARKLE_ACTION {"currentPlayer": {"name": "cc2"}, "action": "login"}
+[{"name":"cc1","online":true},{"name":"cc2","online":true}]
+FARKLE_ACTION {"currentPlayer": {"name": "cc1"}, "opponentPlayer": {"name": "cc2"}, "action": "initial"}

@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"log"
+
 	"github.com/google/uuid"
 )
 
@@ -50,9 +52,11 @@ type Game struct {
 	// End time of the game
 	End int64 `json:"end,omitempty"`
 	// Players list
-	Players []*Player `json:"withPlayer,omitempty"`
+	Players []*Player `json:"players,omitempty"`
 	// Current player, who's turn
 	CurrentPlayer *Player `json:"currentPlayer,omitempty"`
+	// Final winner of the game
+	FinalWinner *Player `json:"finalWinner,omitempty"`
 	// player name => Score
 	Scores map[string]*Score `json:"scores,omitempty"`
 	// All dices
@@ -70,10 +74,12 @@ type GameData struct {
 
 type FarkleRequest struct {
 	// Who
-	Who Player `json:"who"`
+	CurrentPlayer  Player `json:"currentPlayer,omitempty"`
+	OpponentPlayer Player `json:"opponentPlayer,omitempty"`
 
 	// Do
 	// "login" - Login into a game
+	// "initial" - Intial a game with chosen players
 	// "roll" - Roll all rollable dices
 	// "move" - Move the dice from board to player's area
 	// "switch" - Switch the turn between players
@@ -83,29 +89,26 @@ type FarkleRequest struct {
 	Action string `json:"action"`
 
 	//What
-	// dice1
-	Dice1 Dice `json:"dice1,omitempty"`
-	// dice2
-	Dice2 Dice `json:"dice2,omitempty"`
-	// dice3
-	Dice3 Dice `json:"dice3,omitempty"`
-	// dice4
-	Dice4 Dice `json:"dice4,omitempty"`
-	// dice5
-	Dice5 Dice `json:"dice5,omitempty"`
-	// dice6
-	Dice6 Dice `json:"dice6,omitempty"`
+	// Game Id
+	GameId string `json:"gameId,omitempty"`
+	// dice
+	DiceX Dice `json:"diceX,omitempty"`
 }
 
 type FarkelInterface interface {
-	IntialGame(player1 string, player2 string) (string, error)
+	IntialGame(pname1 string, pname2 string) (Game, error)
+	EndGame(gameId string) error
 	Login(name string) ([]Player, error)
+	// TODO:
+	Logout(name string) ([]Player, error)
+	//
 	SearchPlayer(name string) (Player, error)
-	RollDices() ([]Dice, error)
-	MoveDice(d Dice) (Score, error)
-	Calculate() error
-	BankScore() (Score, error)
-	IsMovable() bool
+	RollDices(gameId string) (Game, error)
+	SwitchTurn(gameId string) (Game, error)
+	MoveDice(gameId, diceId, playerName string) (Game, error)
+	IsMovable(gameId string) bool
+	Calculate(gameId string) error
+	BankScore(gameId string) (Game, error)
 }
 
 var gdata = &GameData{
@@ -119,31 +122,58 @@ func FarkleHandler(txt string) (string, error) {
 	fr := FarkleRequest{}
 	err := json.Unmarshal([]byte(txt), &fr)
 	if err != nil {
+		fmt.Println(err)
 		return "", err
 	}
+	var p interface{}
 	switch fr.Action {
-	case "login":
-		ps, err := gdata.Login(fr.Who.Name)
-		if err != nil {
-			return "", err
-		}
-		b, _ := json.Marshal(ps)
-		return string(b), nil
 
+	case "login":
+		p, err = gdata.Login(fr.CurrentPlayer.Name)
+
+	case "initial":
+	case "start":
+		p, err = gdata.IntialGame(fr.CurrentPlayer.Name, fr.OpponentPlayer.Name)
+
+	case "roll":
+		p, err = gdata.RollDices(fr.GameId)
+
+	case "move":
+		p, err = gdata.MoveDice(fr.GameId, fr.DiceX.Id, fr.CurrentPlayer.Name)
+
+	case "switch":
+		p, err = gdata.SwitchTurn(fr.GameId)
+
+	case "bank":
+		p, err = gdata.BankScore(fr.GameId)
+
+	case "end":
+		err = gdata.EndGame(fr.GameId)
 	}
 
-	return "", nil
+	if err != nil {
+		return "", err
+	}
+	b, _ := json.Marshal(p)
+	return string(b), nil
+
 }
 
 // Intial a new game & save it into GameData
 func (gd *GameData) IntialGame(pname1 string, pname2 string) (Game, error) {
 	nGame := &Game{
-		Id:    uuid.New().String(),
-		Start: time.Now().UnixMilli(),
+		Id:     uuid.New().String(),
+		Start:  time.Now().UnixMilli(),
+		Scores: make(map[string]*Score),
+		Dices:  make(map[string]*Dice),
+	}
+	if pname1 == pname2 {
+		return *nGame, fmt.Errorf("%s, please do not play with yourself :)", pname1)
 	}
 	player1, ok1 := gd.Players[pname1]
 	player2, ok2 := gd.Players[pname2]
-	if ok1 && ok2 && !player1.Online && !player2.Online {
+	log.Printf("player1 -> %v, player2 -> %v", player1, player2)
+	if ok1 && ok2 && player1.Online && player2.Online {
 		// Inital players
 		nGame.Players = append(nGame.Players, player1)
 		nGame.Players = append(nGame.Players, player2)
@@ -153,8 +183,8 @@ func (gd *GameData) IntialGame(pname1 string, pname2 string) (Game, error) {
 		nGame.Scores[pname2] = &Score{Round: 1}
 		// Intial dices
 		for i := 1; i <= 6; i++ {
-			nGame.Dices["dice"+string(i)] = &Dice{
-				Id:      "dice" + string(i),
+			nGame.Dices["dice"+strconv.Itoa(i)] = &Dice{
+				Id:      "dice" + strconv.Itoa(i),
 				Value:   i,
 				OnBoard: true,
 			}
@@ -165,6 +195,28 @@ func (gd *GameData) IntialGame(pname1 string, pname2 string) (Game, error) {
 		return *nGame, fmt.Errorf("%s and %s must be logined", pname1, pname2)
 	}
 	return *nGame, nil
+}
+
+// End current game
+func (gd *GameData) EndGame(gameId string) error {
+	if game, ok := gd.Games[gameId]; ok {
+		game.End = time.Now().UnixMilli()
+
+		// who's the winner
+		winner := ""
+		winnerScore := 0
+		for n, s := range game.Scores {
+
+			if s.BankedScore > winnerScore {
+				winner = n
+				winnerScore = s.BankedScore
+			}
+
+		}
+		game.FinalWinner = gd.Players[winner]
+		return nil
+	}
+	return fmt.Errorf("%s is invalid game id", gameId)
 }
 
 // The player logins into the game.
@@ -196,7 +248,7 @@ func (gd *GameData) SearchPlayer(name string) (Player, error) {
 }
 
 // Roll all rollable dices
-func (gd *GameData) RollDices(gameId string, playerName string) (Game, error) {
+func (gd *GameData) RollDices(gameId string) (Game, error) {
 
 	rand.Seed(time.Now().UnixNano())
 
@@ -214,29 +266,37 @@ func (gd *GameData) RollDices(gameId string, playerName string) (Game, error) {
 
 		// 3. Switch turn
 		if !gd.IsMovable(gameId) {
-			//3.1 Reset RoundScore=0
-			score := game.Scores[playerName]
-			score.RoundScore = 0
-
-			//3.2 Move to next round
-			score.Round++
-
-			// 3.3 Swith to other player
-			for _, p := range game.Players {
-				if p.Name != playerName {
-					game.CurrentPlayer = p
-				}
-			}
-
-			//3.2 Reset dices
-			for _, d := range game.Dices {
-				d.OnBoard = true
-				d.Fixed = false
-				d.Value, _ = strconv.Atoi(strings.TrimLeft(d.Id, "dice"))
-				d.WithPlayer = ""
-			}
-			//
+			return gd.SwitchTurn(gameId)
 		}
+		return *game, nil
+	}
+	return Game{}, fmt.Errorf("%s is invalid game id", gameId)
+}
+
+func (gd *GameData) SwitchTurn(gameId string) (Game, error) {
+	if game, ok := gd.Games[gameId]; ok {
+		//3.1 Reset RoundScore=0
+		score := game.Scores[game.CurrentPlayer.Name]
+		score.RoundScore = 0
+
+		//3.2 Move to next round
+		score.Round++
+
+		// 3.3 Swith to other player
+		for _, p := range game.Players {
+			if p.Name != game.CurrentPlayer.Name {
+				game.CurrentPlayer = p
+			}
+		}
+
+		//3.2 Reset dices
+		for _, d := range game.Dices {
+			d.OnBoard = true
+			d.Fixed = false
+			d.Value, _ = strconv.Atoi(strings.TrimLeft(d.Id, "dice"))
+			d.WithPlayer = ""
+		}
+		//
 		return *game, nil
 	}
 	return Game{}, fmt.Errorf("%s is invalid game id", gameId)
@@ -244,7 +304,7 @@ func (gd *GameData) RollDices(gameId string, playerName string) (Game, error) {
 
 // Move specific dice into player's board or other way around.
 // Id is dice indicator, which is one of following: dice1, dice2, dice3, dice4, dice5, dice6
-func (gd *GameData) MoveDice(gameId string, diceId string, playerName string) (Game, error) {
+func (gd *GameData) MoveDice(gameId, diceId, playerName string) (Game, error) {
 
 	// 1. Move a dice in or out players' area if possible
 	if game, ok := gd.Games[gameId]; ok {
@@ -339,23 +399,100 @@ func allEqualTo(ns []int, num int) bool {
 
 }
 
-// TODO:
+// Score calculator
 func calculator(ns []int) int {
-	return 0
+	rt := 0
+
+	// 3x1 => 1000
+	if len(ns) == 3 && allEqualTo(ns, 1) {
+		rt += 1000
+	}
+	// 3x2 => 200
+	if len(ns) == 3 && allEqualTo(ns, 2) {
+		rt += 200
+	}
+	// 3x3 => 300
+	if len(ns) == 3 && allEqualTo(ns, 3) {
+		rt += 300
+	}
+	// 3x4 => 400
+	if len(ns) == 3 && allEqualTo(ns, 4) {
+		rt += 400
+	}
+	// 3x5 => 500
+	if len(ns) == 3 && allEqualTo(ns, 5) {
+		rt += 500
+	}
+	// 3x6 => 600
+	if len(ns) == 3 && allEqualTo(ns, 6) {
+		rt += 600
+	}
+	// 4x? => 1000
+	if len(ns) == 4 && allEqualTo(ns, -1) {
+		rt += 1000
+	}
+	// 5x? => 2000
+	if len(ns) == 5 && allEqualTo(ns, -1) {
+		rt += 2000
+	}
+	// 6x? => 3000
+	if len(ns) == 6 && allEqualTo(ns, -1) {
+		rt += 3000
+	}
+
+	// 3x?? => 1500
+	sort.Ints(ns)
+	if len(ns) == 6 && allEqualTo(ns[:3], -1) && allEqualTo(ns[2:4], -1) && allEqualTo(ns[4:6], -1) {
+		rt += 1500
+	}
+	// 1,2,3,4,5,6 => 2500
+	if len(ns) == 6 && strings.Trim(strings.Replace(fmt.Sprint(ns), " ", ",", -1), "[]") == "123456" {
+		rt += 3000
+	}
+
+	// x1 => x100
+	// x5 => x50
+	if len(ns) > 0 {
+		for _, n := range ns {
+
+			if n == 1 {
+				rt += 100
+			}
+			if n == 5 {
+				rt += 50
+			}
+		}
+	}
+
+	return rt
 }
 
+// Calculate the score for curent round
 func (gd *GameData) Calculate(gameId string) error {
 	if game, ok := gd.Games[gameId]; ok {
-		score := game.Scores[game.CurrentPlayer.Name]
-		if sls, ok := score.Selections[score.Round]; ok {
-			score.RoundScore = calculator(sls)
+		if score, ok := game.Scores[game.CurrentPlayer.Name]; ok {
+			if sls, ok := score.Selections[score.Round]; ok {
+				score.RoundScore = calculator(sls)
+			}
 		}
 	}
 	return nil
 }
 
-func (gd *GameData) BankScore() (Score, error) {
-	// 1. Add the score of current round to total
-	// 2. Switch turn
-	return Score{}, nil
+// Bank the score
+func (gd *GameData) BankScore(gameId string) (Game, error) {
+
+	if game, ok := gd.Games[gameId]; ok {
+		// 1. Add the score of current round to total
+		if score, ok := game.Scores[game.CurrentPlayer.Name]; ok {
+			score.BankedScore += score.RoundScore
+			score.RoundScore = 0
+		}
+
+		// 2. Switch turn
+		_, err := gd.SwitchTurn(gameId)
+		return *game, err
+	}
+
+	return Game{}, fmt.Errorf("%s is invalid game id", gameId)
 }
