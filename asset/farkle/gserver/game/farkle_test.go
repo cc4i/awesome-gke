@@ -30,6 +30,14 @@ func TestFarkleHandler(t *testing.T) {
 			want:    `[{"name":"cc1","online":true},{"name":"cc2","online":true}]`,
 			wantErr: false,
 		},
+		{
+			name: "initial_game_for_cc1_&_cc2",
+			args: args{
+				txt: `{"currentPlayer": {"name": "cc1","online":true}, "opponentPlayer":{"name": "cc2","online":true}, "action": "initial", "gameId": "06c32c52-59dc-4d4b-aa3f-323cb8a0403c", "start": 1670666709239}`,
+			},
+			want:    `{"id":"06c32c52-59dc-4d4b-aa3f-323cb8a0403c","start":1670666709239,"players":[{"name":"cc1","online":true},{"name":"cc2","online":true}],"currentPlayer":{"name":"cc1","online":true},"scores":{"cc1":{"round":1},"cc2":{"round":1}},"dices":{"dice1":{"id":"dice1","value":1,"onBoard":true},"dice2":{"id":"dice2","value":2,"onBoard":true},"dice3":{"id":"dice3","value":3,"onBoard":true},"dice4":{"id":"dice4","value":4,"onBoard":true},"dice5":{"id":"dice5","value":5,"onBoard":true},"dice6":{"id":"dice6","value":6,"onBoard":true}}}`,
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -72,7 +80,7 @@ func TestGameData_IntialGame(t *testing.T) {
 				Games:       tt.fields.Games,
 				LeaderBoard: tt.fields.LeaderBoard,
 			}
-			got, err := gd.IntialGame(tt.args.pname1, tt.args.pname2)
+			got, err := gd.IntialGame("06c32c52-59dc-4d4b-aa3f-323cb8a0403c", 1670667289521, tt.args.pname1, tt.args.pname2)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GameData.IntialGame() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -31,6 +31,25 @@ kubectl expose pod dns-test --name dns-test-svc --port 8080
 kubectl get svc dns-test-svc
 kubectl exec -it dns-test -- nslookup dns-test-svc
 
+kubectl apply -f - << __EOF__
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dnsutils
+  namespace: default
+spec:
+  containers:
+  - name: dnsutils
+    image: registry.k8s.io/e2e-test-images/jessie-dnsutils:1.3
+    command:
+      - sleep
+      - "infinity"
+    imagePullPolicy: IfNotPresent
+  restartPolicy: Always
+__EOF__
+
+kubectl exec -it dnsutils -- bash
+
 # Add A record inside of Cloud DNS, such as "server-kafka-0.server-kafka-headless.default.svc : 192.0.2.99", then you can use follwing command to validate 
 
 kubectl exec -it dns-test -- nslookup server-kafka-0.server-kafka-headless.default.svc.cluster.local

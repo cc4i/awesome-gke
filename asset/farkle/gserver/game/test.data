@@ -4,3 +4,6 @@ FARKLE_ACTION {"currentPlayer": {"name": "cc1"}, "action": "login"}
 FARKLE_ACTION {"currentPlayer": {"name": "cc2"}, "action": "login"}
 [{"name":"cc1","online":true},{"name":"cc2","online":true}]
 FARKLE_ACTION {"currentPlayer": {"name": "cc1"}, "opponentPlayer": {"name": "cc2"}, "action": "initial"}
+
+FARKLE_ACTION {"currentPlayer": {"name": "cc1","online":true}, "opponentPlayer":{"name": "cc1","online":true}, "action": "initial"}
+{"id":"00fd0393-66fb-4f1c-bea8-e1bd4b941e4d","start":1670618435011,"players":[{"name":"cc1","online":true},{"name":"cc2","online":true}],"currentPlayer":{"name":"cc1","online":true},"scores":{"cc1":{"round":1},"cc2":{"round":1}},"dices":{"dice1":{"id":"dice1","value":1,"onBoard":true},"dice2":{"id":"dice2","value":2,"onBoard":true},"dice3":{"id":"dice3","value":3,"onBoard":true},"dice4":{"id":"dice4","value":4,"onBoard":true},"dice5":{"id":"dice5","value":5,"onBoard":true},"dice6":{"id":"dice6","value":6,"onBoard":true}}}

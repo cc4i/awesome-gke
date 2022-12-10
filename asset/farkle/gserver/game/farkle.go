@@ -91,12 +91,13 @@ type FarkleRequest struct {
 	//What
 	// Game Id
 	GameId string `json:"gameId,omitempty"`
+	Start  int64  `json:"start,omitempty"`
 	// dice
 	DiceX Dice `json:"diceX,omitempty"`
 }
 
 type FarkelInterface interface {
-	IntialGame(pname1 string, pname2 string) (Game, error)
+	IntialGame(gameId string, start int64, pname1, pname2 string) (Game, error)
 	EndGame(gameId string) error
 	Login(name string) ([]Player, error)
 	// TODO:
@@ -132,8 +133,8 @@ func FarkleHandler(txt string) (string, error) {
 		p, err = gdata.Login(fr.CurrentPlayer.Name)
 
 	case "initial":
-	case "start":
-		p, err = gdata.IntialGame(fr.CurrentPlayer.Name, fr.OpponentPlayer.Name)
+		// case "start":
+		p, err = gdata.IntialGame(fr.GameId, fr.Start, fr.CurrentPlayer.Name, fr.OpponentPlayer.Name)
 
 	case "roll":
 		p, err = gdata.RollDices(fr.GameId)
@@ -160,10 +161,18 @@ func FarkleHandler(txt string) (string, error) {
 }
 
 // Intial a new game & save it into GameData
-func (gd *GameData) IntialGame(pname1 string, pname2 string) (Game, error) {
+func (gd *GameData) IntialGame(gameId string, start int64, pname1, pname2 string) (Game, error) {
+	log.Println("IntialGame")
+	// Using input id for test
+	if gameId == "" {
+		gameId = uuid.New().String()
+	}
+	if start == -1 {
+		start = time.Now().UnixMilli()
+	}
 	nGame := &Game{
-		Id:     uuid.New().String(),
-		Start:  time.Now().UnixMilli(),
+		Id:     gameId,
+		Start:  start,
 		Scores: make(map[string]*Score),
 		Dices:  make(map[string]*Dice),
 	}
