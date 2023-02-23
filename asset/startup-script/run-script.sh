@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Remark: orginally fork from https://raw.githubusercontent.com/kubernetes-retired/contrib/master/startup-script/manage-startup-script.sh
-# and modify as per request.
-
 set -o errexit
 set -o nounset
 set -o pipefail
