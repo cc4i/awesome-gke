@@ -27,6 +27,7 @@ nav:
     - '2. Access Kubernetes API server without gcloud': operation/gke-login.md
     - '3. The simplest way to delete a node': operation/remove-node.md
     - '4. Monitoring filesystem through Inotify': operation/fsnotify-pv.md
+    - '5. Trasfer PV across zone': operation/transfer-pv.md
 
   - 'Solutions':
     - '1. K3s integrate Google Cloud Provider on GCE': solutions/play-k3s.md
