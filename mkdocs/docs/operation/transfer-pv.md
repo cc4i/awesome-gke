@@ -2,7 +2,7 @@
 
 ## Description
 
-You need to manually tranfer your PV across zone if you don't use reginal persistent disk at very begining, here's guide to help you transfer you storage.
+If you use StorageClass to provision regional PV in GKE, your Pod can mount PV back even it's reboot in node at different zona. However when you use zonal persistent disk to provision your PV (by default), and then you need to manually tranfer your storage across zone. Here's guide to help you transfer your zonal PV in GKE. 
 
 ## Guide
 
