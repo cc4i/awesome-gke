@@ -47,7 +47,7 @@ kubectl get ConfigConnectorContext -n ${CONFIG_NAMESPACE} \
 
 # Configure the VPC
 kpt pkg get \
-  https://github.com/cc4i/multi-k8s.git/asset/acm-kpt/vpc@main \
+  https://github.com/cc4i/awesome-gke.git/asset/acm-kpt/vpc@main \
   ${VPC_NAME}
 cd ${VPC_NAME}
 ( echo "cat <<EOF" ; cat setters.yaml ; echo EOF ) | sh > setters-val.yaml
@@ -57,7 +57,7 @@ mv setters-val.yaml setters.yaml
 
 # 6. Configure subnet 
 kpt pkg get \
-  https://github.com/cc4i/multi-k8s.git/asset/acm-kpt/subnet@main \
+  https://github.com/cc4i/awesome-gke.git/asset/acm-kpt/subnet@main \
   ${SUBNET_NAME}
 cd ${SUBNET_NAME}
 ( echo "cat <<EOF" ; cat setters.yaml ; echo EOF ) | sh > setters-val.yaml
@@ -76,7 +76,7 @@ kpt live status --output table --poll-until current
 # 8. Configure GKE
 cd ..
 kpt pkg get \
-  https://github.com/cc4i/multi-k8s.git/asset/acm-kpt/gke@main \
+  https://github.com/cc4i/awesome-gke.git/asset/acm-kpt/gke@main \
   ${GKE_CLUSTER}
 cd ${GKE_CLUSTER}
 ( echo "cat <<EOF" ; cat setters.yaml ; echo EOF ) | sh > setters-val.yaml

@@ -7,8 +7,8 @@ Placing pods into nodes in single zone with high availability, there're two node
 ```sh
 
 # Clone repo
-git clone https://github.com/cc4i/multi-k8s.git
-cd multi-k8s
+git clone https://github.com/cc4i/awesome-gke.git
+cd awesome-gke
 cd asset/tod/bin && ./gke-affinity.sh
 
 # Apply manifests

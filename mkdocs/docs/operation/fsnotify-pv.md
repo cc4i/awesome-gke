@@ -9,8 +9,8 @@ However it's not working for object filesystem, which is not operating through t
 
 ## Guide
 ```sh
-git clone https://github.com/cc4i/multi-k8s.git
-cd multi-k8s/asset/inotify
+git clone https://github.com/cc4i/awesome-gke.git
+cd awesome-gke/asset/inotify
 
 # 1. Create a storage class & PVC, which takes a while to provision (minutes)
 kubectl apply -f manifests/pv.yaml

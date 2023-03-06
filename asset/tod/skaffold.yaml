@@ -1,7 +1,7 @@
 apiVersion: skaffold/v2beta28
 kind: Config
 metadata:
-  name: multi-k8s
+  name: awesome-gke
 build:
   artifacts:
   - image: us-central1-docker.pkg.dev/play-with-anthos-340801/jigaree/tracker

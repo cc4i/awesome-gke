@@ -18,8 +18,8 @@ More detail could be found [here](https://k3s.io/). K3s can be easily deployed i
 The k3s cluster uses managed instance group for both server and agent nodes for high available purpose, but no auto scaling capability, no external database.
 
 ```sh
-git clone https://github.com/cc4i/multi-k8s.git
-cd multi-k8s/asset/k3s/bin && ./k3s-quickstart.sh
+git clone https://github.com/cc4i/awesome-gke.git
+cd awesome-gke/asset/k3s/bin && ./k3s-quickstart.sh
 ```
 
 ## High-Availability and auto-scalability K3s Cluster
@@ -39,7 +39,7 @@ To build a highly avaiable and scalable K3s cluster on GCP:
 
 **Deployment**
 ```sh
-cd multi-k8s/asset/k3s/bin && ./k3s-ha.sh
+cd awesome-gke/asset/k3s/bin && ./k3s-ha.sh
 ```
 
 
@@ -53,7 +53,7 @@ cd multi-k8s/asset/k3s/bin && ./k3s-ha.sh
 
 - Following guidance to build Cloud Controller Manager (CCM) and push into your own image registry.
 
-- Configure RBAC and allow CCM working properly, see [reference](https://github.com/cc4i/multi-k8s/tree/main/asset/k3s/manifests).
+- Configure RBAC and allow CCM working properly, see [reference](https://github.com/cc4i/awesome-gke/tree/main/asset/k3s/manifests).
 
 **Steps**
 
@@ -77,5 +77,5 @@ cd multi-k8s/asset/k3s/bin && ./k3s-ha.sh
 ## Clean up
 
 ```sh
-cd multi-k8s/hack && ./k3s-quickstart-cleanup.sh
+cd awesome-gke/hack && ./k3s-quickstart-cleanup.sh
 ```

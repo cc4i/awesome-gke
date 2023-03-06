@@ -7,8 +7,8 @@ Visualize pods across the nodes in different zones to supports highly available 
 
 ```sh
 # Clone repo
-git clone https://github.com/cc4i/multi-k8s.git
-cd multi-k8s
+git clone https://github.com/cc4i/awesome-gke.git
+cd awesome-gke
 cd asset/tod/bin && ./gke.sh
 # Execute printed commands to install Anthos Services Mesh
 

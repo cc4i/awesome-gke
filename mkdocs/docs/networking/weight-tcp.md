@@ -8,8 +8,8 @@ Control TCP L4 communication is very important in Kubernetes world, such as migr
 
 ```sh
 # Clone repo
-git clone https://github.com/cc4i/multi-k8s.git
-cd multi-k8s/asset/tod/bin && ./gke.sh
+git clone https://github.com/cc4i/awesome-gke.git
+cd awesome-gke/asset/tod/bin && ./gke.sh
 
 
 # Following pinting to install ASM for GKE, https://cloud.google.com/service-mesh/docs/unified-install/install-anthos-service-mesh#install_mesh_ca
@@ -21,7 +21,7 @@ tag=`skaffold build --dry-run --output='{{json .}}' --quiet |jq '.builds[].tag' 
 
 
 # Deploy demo applications
-cd multi-k8s/asset/tod/manifests/examples/tcp
+cd awesome-gke/asset/tod/manifests/examples/tcp
 kustomize build . | kubectl apply -f -
 
 # Modify ../../weight-tcp/serving.yaml as by comments

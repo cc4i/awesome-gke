@@ -8,7 +8,7 @@ In GKE Standard you can't run customized startup script when booting up a node d
 ```sh
 
 # Clone repo
-git clone https://github.com/cc4i/multi-k8s.git
+git clone https://github.com/cc4i/awesome-gke.git
 cd asset/startup-script
 
 # build image & push into registry
