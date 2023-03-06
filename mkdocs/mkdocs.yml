@@ -28,7 +28,7 @@ nav:
     - '3. The simplest way to delete a node': operation/remove-node.md
     - '4. Monitoring filesystem through Inotify': operation/fsnotify-pv.md
     - '5. Trasfer PV across zone': operation/transfer-pv.md
-    - '6. Manage core dumps in GKE': operation/coredumpx.md
+    - '6. Manage core dumps in GKE': operation/coredump.md
 
   - 'Solutions':
     - '1. K3s integrate Google Cloud Provider on GCE': solutions/play-k3s.md
