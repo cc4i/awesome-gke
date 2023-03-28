@@ -1,0 +1,1696 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://github.com/cc4i/awesome-gke/networking/gateway-hands-on/">
+      
+      
+        <link rel="prev" href="../glb-static-ip/">
+      
+      
+        <link rel="next" href="../../security/workload-idetity/">
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.1.4">
+    
+    
+      
+        <title>8. Hands-on labs with Gateway API - Kubernetes on Google Cloud</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.240905d7.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.a0c5b2b5.min.css">
+      
+      
+
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="" data-md-color-accent="">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#gateway-api-hands-on-labs" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Kubernetes on Google Cloud" class="md-header__button md-logo" aria-label="Kubernetes on Google Cloud" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Kubernetes on Google Cloud
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              8. Hands-on labs with Gateway API 
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Kubernetes on Google Cloud" class="md-nav__button md-logo" aria-label="Kubernetes on Google Cloud" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    Kubernetes on Google Cloud
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        Home
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+          General
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          General
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../general/prepare-gke/" class="md-nav__link">
+        1. Preparing GKE cluster for PRODUCTION
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          Scaling
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          Scaling
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../scaling/block-scaling/" class="md-nav__link">
+        1. Solve the issue of blocking scale-down
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+      
+      
+      
+        <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+          Networking
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_4">
+          <span class="md-nav__icon md-icon"></span>
+          Networking
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../single-zone/" class="md-nav__link">
+        1. Runing in single zone with high availability
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../asm-locality/" class="md-nav__link">
+        2. Reduce interzone traffic with Anthhos Service Mesh
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../glb-locality/" class="md-nav__link">
+        3. Hybrid connectivity with services on AWS
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../recipes/" class="md-nav__link">
+        4. GKE Network recipes from Google Cloud
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../weight-tcp/" class="md-nav__link">
+        5. Weight-based TCP routing
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clouddns/" class="md-nav__link">
+        6. Enhance domain resolving with Cloud DNS
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../glb-static-ip/" class="md-nav__link">
+        7. Binding a static IP
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          8. Hands-on labs with Gateway API 
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        8. Hands-on labs with Gateway API 
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    Overview
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contents" class="md-nav__link">
+    Contents
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    Prerequisites
+  </a>
+  
+    <nav class="md-nav" aria-label="Prerequisites">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-enable-apis-such-as-gke-gke-hub-and-gke-multi-cluster-ingress-mci-etc-in-your-projects" class="md-nav__link">
+    1. Enable APIs, such as GKE, GKE Hub, and GKE Multi-cluster Ingress (MCI), etc. in your projects
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-provision-a-gke-cluster-with-gateway-api-or-enable-existed-gke-clutser" class="md-nav__link">
+    2. Provision a GKE cluster with Gateway API, or enable existed GKE clutser
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-checkout-the-sample-code" class="md-nav__link">
+    3. Checkout the sample code
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-1-external-gateway-using-certificate-manager-with-wildcard-domain" class="md-nav__link">
+    Lab 1. External Gateway using Certificate Manager with wildcard domain
+  </a>
+  
+    <nav class="md-nav" aria-label="Lab 1. External Gateway using Certificate Manager with wildcard domain">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-create-a-certificate-map" class="md-nav__link">
+    1.1 Create a certificate map
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-create-a-gateway" class="md-nav__link">
+    1.2 Create a Gateway
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13-deployment-demo-application" class="md-nav__link">
+    1.3 Deployment demo application
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#14-use-shared-gateways" class="md-nav__link">
+    1.4 Use shared Gateways
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-2-configuring-a-static-ip-for-a-gateway" class="md-nav__link">
+    Lab 2. Configuring a static IP for a Gateway
+  </a>
+  
+    <nav class="md-nav" aria-label="Lab 2. Configuring a static IP for a Gateway">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-create-a-static-ip-address" class="md-nav__link">
+    2.1 Create a static IP address
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-create-a-gateway-with-static-ip" class="md-nav__link">
+    2.2 Create a Gateway with static IP
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-3-multi-cluster-gateway" class="md-nav__link">
+    Lab 3. Multi-cluster gateway
+  </a>
+  
+    <nav class="md-nav" aria-label="Lab 3. Multi-cluster gateway">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-craete-multiple-gke-clusters-in-different-regions" class="md-nav__link">
+    3.1 Craete multiple GKE clusters in different regions
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-register-to-the-fleet" class="md-nav__link">
+    3.2 Register to the fleet
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-enable-multi-cluster-services" class="md-nav__link">
+    3.3 Enable multi-cluster services
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34-deploy-demo-application-into-all-clusters" class="md-nav__link">
+    3.4 Deploy demo application into all clusters
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#35-deploy-external-http-gateway" class="md-nav__link">
+    3.5 Deploy external http Gateway
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#36-validate-deployment" class="md-nav__link">
+    3.6 Validate deployment
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-4-capacity-based-load-balancing" class="md-nav__link">
+    Lab 4. Capacity-based load balancing
+  </a>
+  
+    <nav class="md-nav" aria-label="Lab 4. Capacity-based load balancing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-prepare-clusters-if-not-done-in-previous-steps" class="md-nav__link">
+    4.1 Prepare clusters if not done in previous steps
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-deploy-the-demo-application" class="md-nav__link">
+    4.2 Deploy the demo application
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-deploy-external-http-gateway" class="md-nav__link">
+    4.3 Deploy external http Gateway
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#44-testing-the-gateway" class="md-nav__link">
+    4.4 Testing the Gateway
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          Security
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_5">
+          <span class="md-nav__icon md-icon"></span>
+          Security
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/workload-idetity/" class="md-nav__link">
+        1. Acccessing AWS services from GKE through workload identity
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/slsa/" class="md-nav__link">
+        2. Secure CI/CD following SLSA
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          Operation
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6">
+          <span class="md-nav__icon md-icon"></span>
+          Operation
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operation/gpm/" class="md-nav__link">
+        1. Improve Observeabiltiy with Google Cloud Managed Prometheus
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operation/gke-login/" class="md-nav__link">
+        2. Access Kubernetes API server without gcloud
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operation/remove-node/" class="md-nav__link">
+        3. The simplest way to delete a node
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operation/fsnotify-pv/" class="md-nav__link">
+        4. Monitoring filesystem through Inotify
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operation/transfer-pv/" class="md-nav__link">
+        5. Trasfer PV across zone
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operation/coredump/" class="md-nav__link">
+        6. Manage core dumps in GKE
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+          Solutions
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_7">
+          <span class="md-nav__icon md-icon"></span>
+          Solutions
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../solutions/play-k3s/" class="md-nav__link">
+        1. K3s integrate Google Cloud Provider on GCE
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../solutions/acm-kpt/" class="md-nav__link">
+        2. Manage GKEs with Anthos Config Management & kpt
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../solutions/es-gke/" class="md-nav__link">
+        3. High scalable and available Elasticsearch on GKE
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+          Workaround
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_8">
+          <span class="md-nav__icon md-icon"></span>
+          Workaround
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../workaround/startup-script/" class="md-nav__link">
+        1. Run a boortrap script when launching nodes in GKE
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../workaround/custom-autoscaler/" class="md-nav__link">
+        2. Use customized Cluster Autoscaler instead of built-in one from GKE
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../workaround/autopilot-storage/" class="md-nav__link">
+        3. Three ways to surpass ephemeral storage limit of GKE Autopilot
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+          About
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_9">
+          <span class="md-nav__icon md-icon"></span>
+          About
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../license/" class="md-nav__link">
+        License
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/" class="md-nav__link">
+        Release Notes
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    Overview
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contents" class="md-nav__link">
+    Contents
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    Prerequisites
+  </a>
+  
+    <nav class="md-nav" aria-label="Prerequisites">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-enable-apis-such-as-gke-gke-hub-and-gke-multi-cluster-ingress-mci-etc-in-your-projects" class="md-nav__link">
+    1. Enable APIs, such as GKE, GKE Hub, and GKE Multi-cluster Ingress (MCI), etc. in your projects
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-provision-a-gke-cluster-with-gateway-api-or-enable-existed-gke-clutser" class="md-nav__link">
+    2. Provision a GKE cluster with Gateway API, or enable existed GKE clutser
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-checkout-the-sample-code" class="md-nav__link">
+    3. Checkout the sample code
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-1-external-gateway-using-certificate-manager-with-wildcard-domain" class="md-nav__link">
+    Lab 1. External Gateway using Certificate Manager with wildcard domain
+  </a>
+  
+    <nav class="md-nav" aria-label="Lab 1. External Gateway using Certificate Manager with wildcard domain">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-create-a-certificate-map" class="md-nav__link">
+    1.1 Create a certificate map
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-create-a-gateway" class="md-nav__link">
+    1.2 Create a Gateway
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13-deployment-demo-application" class="md-nav__link">
+    1.3 Deployment demo application
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#14-use-shared-gateways" class="md-nav__link">
+    1.4 Use shared Gateways
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-2-configuring-a-static-ip-for-a-gateway" class="md-nav__link">
+    Lab 2. Configuring a static IP for a Gateway
+  </a>
+  
+    <nav class="md-nav" aria-label="Lab 2. Configuring a static IP for a Gateway">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-create-a-static-ip-address" class="md-nav__link">
+    2.1 Create a static IP address
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-create-a-gateway-with-static-ip" class="md-nav__link">
+    2.2 Create a Gateway with static IP
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-3-multi-cluster-gateway" class="md-nav__link">
+    Lab 3. Multi-cluster gateway
+  </a>
+  
+    <nav class="md-nav" aria-label="Lab 3. Multi-cluster gateway">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-craete-multiple-gke-clusters-in-different-regions" class="md-nav__link">
+    3.1 Craete multiple GKE clusters in different regions
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-register-to-the-fleet" class="md-nav__link">
+    3.2 Register to the fleet
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-enable-multi-cluster-services" class="md-nav__link">
+    3.3 Enable multi-cluster services
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34-deploy-demo-application-into-all-clusters" class="md-nav__link">
+    3.4 Deploy demo application into all clusters
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#35-deploy-external-http-gateway" class="md-nav__link">
+    3.5 Deploy external http Gateway
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#36-validate-deployment" class="md-nav__link">
+    3.6 Validate deployment
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-4-capacity-based-load-balancing" class="md-nav__link">
+    Lab 4. Capacity-based load balancing
+  </a>
+  
+    <nav class="md-nav" aria-label="Lab 4. Capacity-based load balancing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-prepare-clusters-if-not-done-in-previous-steps" class="md-nav__link">
+    4.1 Prepare clusters if not done in previous steps
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-deploy-the-demo-application" class="md-nav__link">
+    4.2 Deploy the demo application
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-deploy-external-http-gateway" class="md-nav__link">
+    4.3 Deploy external http Gateway
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#44-testing-the-gateway" class="md-nav__link">
+    4.4 Testing the Gateway
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<h1 id="gateway-api-hands-on-labs">Gateway API Hands-on Labs</h1>
+<h2 id="overview">Overview</h2>
+<p>The sample labs in this section demonstrate how to use the Gateway API to configure a Gateway and expose a service to external traffic. The labs are based on the <a href="https://gateway-api.sigs.k8s.io/">Gateway API</a> and <a href="https://cloud.google.com/kubernetes-engine/docs/how-to/deploying-gateways">GKE Gateway</a> features.</p>
+<h2 id="contents">Contents</h2>
+<ul>
+<li>Lab1. <a href="#lab-1-external-gateway-using-certificate-manager-with-wildcard-domain">External Gateway using Certificate Manager with wildcard domain</a></li>
+<li>Lab2. <a href="#lab-2-configuring-a-static-ip-for-a-gateway">Configuring a static IP for a Gateway</a></li>
+<li>Lab3. <a href="#lab-3-multi-cluster-gateway">Multi-cluster gateway</a></li>
+<li>Lab4. <a href="#lab-4-capacity-based-load-balancing">Capacity-based load balancing</a></li>
+</ul>
+<h2 id="prerequisites">Prerequisites</h2>
+<h3 id="1-enable-apis-such-as-gke-gke-hub-and-gke-multi-cluster-ingress-mci-etc-in-your-projects">1. Enable APIs, such as GKE, GKE Hub, and GKE Multi-cluster Ingress (MCI), etc. in your projects</h3>
+<pre><code class="language-shell"># Environment variables
+export PROJECT_ID=play-api-service
+export PROJECT_NUMBER=374299782509
+
+# Enable APIs
+gcloud services enable \
+    container.googleapis.com \
+    gkehub.googleapis.com \
+    multiclusterservicediscovery.googleapis.com \
+    multiclusteringress.googleapis.com \
+    trafficdirector.googleapis.com \
+    --project=${PROJECT_ID}
+</code></pre>
+<h3 id="2-provision-a-gke-cluster-with-gateway-api-or-enable-existed-gke-clutser">2. Provision a GKE cluster with Gateway API, or enable existed GKE clutser</h3>
+<pre><code class="language-shell"># Create a GKE cluster with Gateway API
+gcloud container clusters create pt-cluster-4 \
+    --gateway-api=standard \
+    --release-channel=Rapid \
+    --region=asia-southeast1
+
+
+# Enable Gateway API for an existing GKE cluster
+gcloud container clusters update pt-cluster-4 \
+    --gateway-api=standard \
+    --region=asia-southeast1
+
+# Verify the cluster
+kubectl get gatewayclass
+</code></pre>
+<h3 id="3-checkout-the-sample-code">3. Checkout the sample code</h3>
+<pre><code class="language-shell">git clone https://github.com/cc4i/awesome-gke.git
+cd awesome-gke/gatewayclass
+</code></pre>
+<h2 id="lab-1-external-gateway-using-certificate-manager-with-wildcard-domain">Lab 1. External Gateway using Certificate Manager with wildcard domain</h2>
+<h3 id="11-create-a-certificate-map">1.1 Create a certificate map</h3>
+<pre><code class="language-shell"># Enable Certificate Manager API
+gcloud services enable certificatemanager.googleapis.com
+
+# Create a DNS Authorization to validate your certificate. Example here is my personal domain cc4i.xyz and reigstered in GoDaddy, you can use your own domain.
+gcloud certificate-manager dns-authorizations create dns-auth-cc4i-xyz \
+  --domain=&quot;cc4i.xyz&quot;
+
+# !!!Returning DNS resource record needs to be added as CNAME into your DNS configuration !!!
+
+# Create a certificate
+gcloud beta certificate-manager certificates create store-cc4i-xyz-cert \
+    --domains=&quot;cc4i.xyz,*.cc4i.xyz&quot; \
+    --dns-authorizations=dns-auth-cc4i-xyz
+
+# Create a certificate map
+gcloud beta certificate-manager maps create store-cc4i-xyz-map
+
+# Create a certificate map entry for wildcard domain
+gcloud beta certificate-manager maps entries create store-cc4i-xyz-map-entry1 \
+    --map=store-cc4i-xyz-map \
+    --hostname=&quot;*.cc4i.xyz&quot; \
+    --certificates=store-cc4i-xyz-cert
+
+# Create a certificate map entry for root domain
+gcloud beta certificate-manager maps entries create store-cc4i-xyz-map-entry2 \
+    --map=store-cc4i-xyz-map \
+    --hostname=&quot;cc4i.xyz&quot; \
+    --certificates=store-cc4i-xyz-cert
+</code></pre>
+<blockquote>
+<p>References: 
+- <a href="https://cloud.google.com/certificate-manager/docs/deploy-google-managed-dns-auth#create_a_google-managed_certificate_referencing_the_dns_authorization">DNS Authorization</a>
+- <a href="https://cloud.google.com/kubernetes-engine/docs/how-to/secure-gateway">Secure a gateway</a></p>
+</blockquote>
+<h3 id="12-create-a-gateway">1.2 Create a Gateway</h3>
+<pre><code class="language-shell"># Create a Gateway
+kubectl apply -f single-https/gateway.yaml
+
+# Verify the Gateway
+kubectl describe gateways.gateway.networking.k8s.io external-http
+</code></pre>
+<h3 id="13-deployment-demo-application">1.3 Deployment demo application</h3>
+<pre><code class="language-shell"># Deploy the demo application
+kubectl apply -f single-https/store.yaml
+kubectl get pods
+kubectl get service
+
+# Check Gateway IP
+kubectl get gateways.gateway.networking.k8s.io external-http -o=jsonpath=&quot;{.status.addresses[0].value}&quot;
+
+# Apply the http route
+kubectl apply -f single-https/store-route-external.yaml
+</code></pre>
+<blockquote>
+<p>References:
+- <a href="https://cloud.google.com/kubernetes-engine/docs/how-to/deploying-gateways#deploy_the_demo_applications_2">Demo applications</a>
+- <a href="https://gateway-api.sigs.k8s.io/api-types/httproute/">HTTPRoute</a></p>
+</blockquote>
+<h3 id="14-use-shared-gateways">1.4 Use shared Gateways</h3>
+<pre><code class="language-shell"># Used as a shared Gateway
+kubectl apply -f single-https/site.yaml
+# Apply the http route
+kubectl apply -f single-https/site-route-external.yaml
+</code></pre>
+<h2 id="lab-2-configuring-a-static-ip-for-a-gateway">Lab 2. Configuring a static IP for a Gateway</h2>
+<h3 id="21-create-a-static-ip-address">2.1 Create a static IP address</h3>
+<pre><code class="language-shell"># https://cloud.google.com/kubernetes-engine/docs/how-to/deploying-gateways#gateway_ip_addressing
+
+
+gcloud compute addresses create test-public-ip-cc4i-xyz \
+    --global \
+    --project=${PROJECT_ID}
+</code></pre>
+<h3 id="22-create-a-gateway-with-static-ip">2.2 Create a Gateway with static IP</h3>
+<pre><code class="language-shell"># Apply the Gateway with static IP
+kubectl apply -f single-https/named-ip-gateway.yaml 
+</code></pre>
+<h2 id="lab-3-multi-cluster-gateway">Lab 3. Multi-cluster gateway</h2>
+<h3 id="31-craete-multiple-gke-clusters-in-different-regions">3.1 Craete multiple GKE clusters in different regions</h3>
+<pre><code class="language-shell"># Create multiple GKE clusters in different regions
+gcloud container clusters create gke-west-1 \
+    --gateway-api=standard \
+    --zone=us-west1-a \
+    --workload-pool=${PROJECT_ID}.svc.id.goog \
+    --cluster-version=1.25.6-gke.1000 \
+    --project=${PROJECT_ID}
+
+gcloud container clusters create gke-west-2 \
+    --gateway-api=standard \
+    --zone=us-west1-a \
+    --workload-pool=${PROJECT_ID}.svc.id.goog \
+    --cluster-version=1.25.6-gke.1000 \
+    --project=${PROJECT_ID}
+
+gcloud container clusters create gke-east-1 \
+    --gateway-api=standard \
+    --zone=us-east1-b \
+    --workload-pool=${PROJECT_ID}.svc.id.goog \
+    --cluster-version=1.25.6-gke.1000 \
+    --project=${PROJECT_ID}
+
+# Rename the context
+kubectl config rename-context gke_${PROJECT_ID}_us-west1-a_gke-west-1 gke-west-1
+kubectl config rename-context gke_${PROJECT_ID}_us-west1-a_gke-west-2 gke-west-2
+kubectl config rename-context gke_${PROJECT_ID}_us-east1-b_gke-east-1 gke-east-1
+</code></pre>
+<h3 id="32-register-to-the-fleet">3.2 Register to the fleet</h3>
+<pre><code class="language-shell"># Register to the fleet
+gcloud container fleet memberships register gke-west-1 \
+     --gke-cluster us-west1-a/gke-west-1 \
+     --enable-workload-identity \
+     --project=${PROJECT_ID}
+
+gcloud container fleet memberships register gke-west-2 \
+     --gke-cluster us-west1-a/gke-west-2 \
+     --enable-workload-identity \
+     --project=${PROJECT_ID}
+
+gcloud container fleet memberships register gke-east-1 \
+     --gke-cluster us-east1-b/gke-east-1 \
+     --enable-workload-identity \
+     --project=${PROJECT_ID}
+
+# Try following command to add permission to service account if you got error ralated to permission!!!
+gcloud projects add-iam-policy-binding ${PROJECT_ID} --member \
+    serviceAccount:service-${PROJECT_NUMBER}@gcp-sa-gkehub.iam.gserviceaccount.com \
+    --role &quot;roles/gkehub.connect&quot;
+
+# Validate the membership
+gcloud container fleet memberships list --project=${PROJECT_ID}
+
+</code></pre>
+<h3 id="33-enable-multi-cluster-services">3.3 Enable multi-cluster services</h3>
+<pre><code class="language-shell"># Enable multi-cluster services API
+gcloud container fleet multi-cluster-services enable \
+    --project ${PROJECT_ID}
+
+# Grant IAM permission required for multi-cluster services
+gcloud projects add-iam-policy-binding ${PROJECT_ID} \
+     --member &quot;serviceAccount:${PROJECT_ID}.svc.id.goog[gke-mcs/gke-mcs-importer]&quot; \
+     --role &quot;roles/compute.networkViewer&quot; \
+     --project=${PROJECT_ID}
+
+# Choose member cluster, which would host the resource for multi-cluster Gateway
+gcloud container fleet ingress enable \
+    --config-membership=gke-west-1 \
+    --project=${PROJECT_ID}
+
+# Validate the ingress
+gcloud container fleet ingress describe --project=${PROJECT_ID}
+
+# Grant IAM permission required for multi-cluster services
+gcloud projects add-iam-policy-binding ${PROJECT_ID} \
+    --member &quot;serviceAccount:service-${PROJECT_NUMBER}@gcp-sa-multiclusteringress.iam.gserviceaccount.com&quot; \
+    --role &quot;roles/container.admin&quot; \
+    --project=${PROJECT_ID}
+
+# Validate the GatewayClass
+kubectl get gatewayclasses --context=gke-west-1
+</code></pre>
+<h3 id="34-deploy-demo-application-into-all-clusters">3.4 Deploy demo application into all clusters</h3>
+<pre><code class="language-shell"># Deploy demo application into all clusters
+kubectl apply --context gke-west-1 -f multi/multi-store.yaml
+kubectl apply --context gke-west-2 -f multi/multi-store.yaml
+kubectl apply --context gke-east-1 -f multi/multi-store.yaml
+
+kubectl apply -f store-west-service.yaml --context gke-west-1
+kubectl apply -f store-east-service.yaml --context gke-east-1 --namespace store
+
+# Validate the deployment
+kubectl get serviceexports --context gke-east-1 -n store
+kubectl get serviceimports --context gke-east-1 -n store
+</code></pre>
+<h3 id="35-deploy-external-http-gateway">3.5 Deploy external http Gateway</h3>
+<pre><code class="language-shell"># Deploy external http Gateway
+kubectl apply -f multi/external-http-gateway.yaml --context gke-west-1 --namespace store
+
+# Apply the http route
+kubectl apply -f multi/public-route-external.yaml --context gke-west-1 --namespace store
+
+# Validate the Gateway
+kubectl describe gateways.gateway.networking.k8s.io external-http --context gke-west-1 --namespace store
+
+</code></pre>
+<h3 id="36-validate-deployment">3.6 Validate deployment</h3>
+<pre><code class="language-shell"># Get the IP of the Gateway
+kubectl get gateway -n store
+kubectl get gateways.gateway.networking.k8s.io external-http \
+    -o=jsonpath=&quot;{.status.addresses[0].value}&quot; --context gke-west-1 --namespace store
+
+# Take a while to sync all routes into GLB
+
+curl -H &quot;host: store.example.com&quot; http://34.98.80.105
+curl -H &quot;host: store.example.com&quot; http://34.98.80.105/west
+curl -H &quot;host: store.example.com&quot; http://34.98.80.105/east
+</code></pre>
+<blockquote>
+<p>Reference:
+- <a href="https://cloud.google.com/kubernetes-engine/docs/how-to/enabling-multi-cluster-gateways">Enable Multi-cluster Gateway</a>
+- <a href="https://cloud.google.com/kubernetes-engine/docs/fleets-overview#introducing_fleets">Fleet</a></p>
+</blockquote>
+<h2 id="lab-4-capacity-based-load-balancing">Lab 4. Capacity-based load balancing</h2>
+<h3 id="41-prepare-clusters-if-not-done-in-previous-steps">4.1 Prepare clusters if not done in previous steps</h3>
+<pre><code class="language-shell">kubectl get gatewayclasses --context=gke-west-1
+</code></pre>
+<h3 id="42-deploy-the-demo-application">4.2 Deploy the demo application</h3>
+<pre><code class="language-shell"># Deploy the application into all clusters
+kubectl apply -f capacity-based-glb/store-traffic-deploy.yaml --context gke-west-1
+kubectl apply -f capacity-based-glb/store-traffic-deploy.yaml  --context gke-east-1
+kubectl apply -f capacity-based-glb/store-service.yaml --context gke-west-1
+kubectl apply -f capacity-based-glb store-service.yaml --context gke-east-1
+</code></pre>
+<h3 id="43-deploy-external-http-gateway">4.3 Deploy external http Gateway</h3>
+<pre><code class="language-shell"># Deploy external http Gateway
+kubectl apply -f store-route.yaml --context gke-west-1
+# Validate the Gateway
+kubectl describe gateways.gateway.networking.k8s.io store -n traffic-test --context gke-west-1
+</code></pre>
+<h3 id="44-testing-the-gateway">4.4 Testing the Gateway</h3>
+<pre><code class="language-shell"># Get the IP of the Gateway
+curl http://34.160.103.232
+
+# Take a while to sync all routes into GLB
+kubectl get gateways.gateway.networking.k8s.io store -n traffic-test \
+    --context=gke-west-1 \
+    -o=jsonpath=&quot;{.metadata.annotations.networking\.gke\.io/url-maps}&quot;
+
+
+# Add a load generator to the cluster
+kubectl run --context=gke-west-1 -i --tty --rm loadgen  \
+    --image=cyrilbkr/httperf  \
+    --restart=Never  \
+    -- /bin/sh -c 'httperf  \
+    --server=34.160.103.232  \
+    --hog --uri=&quot;/zone&quot; --port 80  --wsess=100000,1,1 --rate 10'
+
+
+# Fetch metrics from Monitoring &amp; observe the traffic distribution
+fetch https_lb_rule
+| metric 'loadbalancing.googleapis.com/https/backend_request_count'
+| filter (resource.url_map_name =='gkemcg1-traffic-test-store-armvfyupay1t')
+| align rate(1m)
+| every 1m
+| group_by [resource.backend_scope],
+    [value_backend_request_count_aggregate:
+       aggregate(value.backend_request_count)]
+
+
+# Add more traffic to cluster &amp; observe the traffic distribution
+kubectl run --context=gke-west-1 -i --tty --rm loadgen  \
+    --image=cyrilbkr/httperf  \
+    --restart=Never  \
+    -- /bin/sh -c 'httperf  \
+    --server=34.160.103.232  \
+    --hog --uri=&quot;/zone&quot; --port 80  --wsess=100000,1,1 --rate 30'
+</code></pre>
+<blockquote>
+<p>Reference:
+- <a href="https://cloud.google.com/kubernetes-engine/docs/how-to/deploying-multi-cluster-gateways#capacity-load-balancing">Capacity-based load balancing</a></p>
+</blockquote>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.19047be9.min.js"></script>
+      
+    
+  </body>
+</html>
