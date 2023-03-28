@@ -1,0 +1,15 @@
+kind: HTTPRoute
+apiVersion: gateway.networking.k8s.io/v1beta1
+metadata:
+  name: site-external
+spec:
+  parentRefs:
+  - kind: Gateway
+    name: external-http
+  hostnames:
+  - "site.cc4i.xyz"
+  rules:
+  - backendRefs:
+    - name: site-v1
+      port: 8080
+      

@@ -16,6 +16,7 @@ nav:
     - '5. Weight-based TCP routing': networking/weight-tcp.md
     - '6. Enhance domain resolving with Cloud DNS': networking/clouddns.md
     - '7. Binding a static IP': networking/glb-static-ip.md
+    - '8. Hands-on labs with Gateway API ': networking/gateway-hands-on.md
 
 
   - 'Security':
