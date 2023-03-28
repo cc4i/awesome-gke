@@ -269,8 +269,12 @@ kubectl get serviceimports --context gke-east-1 -n store
 # Deploy external http Gateway
 kubectl apply -f multi/external-http-gateway.yaml --context gke-west-1 --namespace store
 
+# Apply the http route
+kubectl apply -f multi/public-route-external.yaml --context gke-west-1 --namespace store
+
 # Validate the Gateway
 kubectl describe gateways.gateway.networking.k8s.io external-http --context gke-west-1 --namespace store
+
 ```
 
 ### 3.6 Validate deployment
