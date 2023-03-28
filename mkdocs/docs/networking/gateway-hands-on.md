@@ -4,10 +4,10 @@
 The sample labs in this section demonstrate how to use the Gateway API to configure a Gateway and expose a service to external traffic. The labs are based on the [Gateway API](https://gateway-api.sigs.k8s.io/) and [GKE Gateway](https://cloud.google.com/kubernetes-engine/docs/how-to/deploying-gateways) features.
 
 ## Contents
-- Lab1. [External Gateway using Certificate Manager with wildcard domain]()
-- Lab2. [Configuring a static IP for a Gateway]()
-- Lab3. [Multi-cluster gateway]()
-- Lab4. [Capacity-based load balancing]()
+- Lab1. [External Gateway using Certificate Manager with wildcard domain](#lab-1-external-gateway-using-certificate-manager-with-wildcard-domain)
+- Lab2. [Configuring a static IP for a Gateway](#lab-2-configuring-a-static-ip-for-a-gateway)
+- Lab3. [Multi-cluster gateway](#lab-3-multi-cluster-gateway)
+- Lab4. [Capacity-based load balancing](#lab-4-capacity-based-load-balancing)
 
 
 ## Prerequisites
