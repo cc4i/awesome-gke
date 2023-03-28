@@ -46,7 +46,12 @@ gcloud container clusters update pt-cluster-4 \
 # Verify the cluster
 kubectl get gatewayclass
 ```
+### 3. Checkout the sample code
 
+```shell
+git clone https://github.com/cc4i/awesome-gke.git
+cd awesome-gke/gatewayclass
+```
 
 
 ## Lab 1. External Gateway using Certificate Manager with wildcard domain
@@ -128,9 +133,9 @@ kubectl apply -f single-https/site.yaml
 kubectl apply -f single-https/site-route-external.yaml
 ```
 
-# Lab 2. Configuring a static IP for a Gateway
+## Lab 2. Configuring a static IP for a Gateway
 
-## 2.1 Create a static IP address
+### 2.1 Create a static IP address
 
 ```shell
 # https://cloud.google.com/kubernetes-engine/docs/how-to/deploying-gateways#gateway_ip_addressing
@@ -150,7 +155,7 @@ kubectl apply -f single-https/named-ip-gateway.yaml
 ## Lab 3. Multi-cluster gateway
 
 
-## 3.1 Craete multiple GKE clusters in different regions
+### 3.1 Craete multiple GKE clusters in different regions
 
 ```shell
 # Create multiple GKE clusters in different regions
@@ -181,7 +186,7 @@ kubectl config rename-context gke_${PROJECT_ID}_us-west1-a_gke-west-2 gke-west-2
 kubectl config rename-context gke_${PROJECT_ID}_us-east1-b_gke-east-1 gke-east-1
 ```
 
-## 3.2 Register to the fleet
+### 3.2 Register to the fleet
 
 ```shell
 # Register to the fleet
@@ -211,7 +216,7 @@ gcloud container fleet memberships list --project=${PROJECT_ID}
 ```
 
 
-## 3.3 Enable multi-cluster services
+### 3.3 Enable multi-cluster services
 
 ```shell
 # Enable multi-cluster services API
@@ -242,7 +247,7 @@ gcloud projects add-iam-policy-binding ${PROJECT_ID} \
 kubectl get gatewayclasses --context=gke-west-1
 ```
 
-## 3.4 Deploy demo application into all clusters 
+### 3.4 Deploy demo application into all clusters 
 
 ```shell
 # Deploy demo application into all clusters
@@ -258,7 +263,7 @@ kubectl get serviceexports --context gke-east-1 -n store
 kubectl get serviceimports --context gke-east-1 -n store
 ```
 
-## 3.5 Deploy external http Gateway
+### 3.5 Deploy external http Gateway
 
 ```shell
 # Deploy external http Gateway
@@ -268,11 +273,12 @@ kubectl apply -f multi/external-http-gateway.yaml --context gke-west-1 --namespa
 kubectl describe gateways.gateway.networking.k8s.io external-http --context gke-west-1 --namespace store
 ```
 
-## 3.6 Validate deployment
+### 3.6 Validate deployment
 ```shell
 # Get the IP of the Gateway
 kubectl get gateway -n store
-kubectl get gateways.gateway.networking.k8s.io external-http -o=jsonpath="{.status.addresses[0].value}" --context gke-west-1 --namespace store
+kubectl get gateways.gateway.networking.k8s.io external-http \
+    -o=jsonpath="{.status.addresses[0].value}" --context gke-west-1 --namespace store
 
 # Take a while to sync all routes into GLB
 
@@ -288,12 +294,12 @@ curl -H "host: store.example.com" http://34.98.80.105/east
 
 ## Lab 4. Capacity-based load balancing
 
-## 4.1 Prepare clusters if not done in previous steps
+### 4.1 Prepare clusters if not done in previous steps
 ```shell
 kubectl get gatewayclasses --context=gke-west-1
 ```
 
-## 4.2 Deploy the demo application
+### 4.2 Deploy the demo application
 
 ```shell
 # Deploy the application into all clusters
@@ -303,7 +309,7 @@ kubectl apply -f capacity-based-glb/store-service.yaml --context gke-west-1
 kubectl apply -f capacity-based-glb store-service.yaml --context gke-east-1
 ```
 
-## 4.3 Deploy external http Gateway
+### 4.3 Deploy external http Gateway
 
 ```shell
 # Deploy external http Gateway
@@ -312,14 +318,16 @@ kubectl apply -f store-route.yaml --context gke-west-1
 kubectl describe gateways.gateway.networking.k8s.io store -n traffic-test --context gke-west-1
 ```
 
-## 4.4 Testing the Gateway
+### 4.4 Testing the Gateway
 
 ```shell
 # Get the IP of the Gateway
 curl http://34.160.103.232
 
 # Take a while to sync all routes into GLB
-kubectl get gateways.gateway.networking.k8s.io store -n traffic-test --context=gke-west-1 -o=jsonpath="{.metadata.annotations.networking\.gke\.io/url-maps}"
+kubectl get gateways.gateway.networking.k8s.io store -n traffic-test \
+    --context=gke-west-1 \
+    -o=jsonpath="{.metadata.annotations.networking\.gke\.io/url-maps}"
 
 
 # Add a load generator to the cluster
