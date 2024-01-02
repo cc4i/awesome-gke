@@ -69,3 +69,5 @@ kubectl apply -f ../manifests/es.yaml
 kubectl port-forward service/ha-es2-kb-http 5601
 # Default user - elastic
 kubectl get secret ha-es2-es-elastic-user -o=jsonpath='{.data.elastic}' | base64 --decode; echo
+# Validate Elasticsearch cluster
+# curl -u "elastic:44alO270IIWthNX901zQpd22" -k "https://34.143.197.244:9200"
