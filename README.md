@@ -18,6 +18,7 @@ Welcome to Kubernetes on Google Cloud, the goal of this repo is to offer a colle
 
 Will include advanced topics in the future: 
 
+- GenAI/AI on GKE
 - Multi/Hybrid Clusters
 - Solutions on GKE
 - Workaround for something 
